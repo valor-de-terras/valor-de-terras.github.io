@@ -130,27 +130,3 @@ export function bbox(
   if (!isFinite(minX)) return [-54, -27, -48, -22];
   return [minX, minY, maxX, maxY];
 }
-
-/** Gera um polígono pseudo-CAR ao redor de um ponto (para o modo "clique no mapa"). */
-export function syntheticParcelAround(
-  lng: number,
-  lat: number,
-  seed = 1
-): Feature<Geometry> {
-  // raio ~0.6–1.2 km, forma irregular determinística
-  const n = 9;
-  const baseR = 0.006 + (seed % 5) * 0.0011;
-  const coords: Position[] = [];
-  for (let i = 0; i <= n; i++) {
-    const ang = (i / n) * Math.PI * 2;
-    const jitter = 0.55 + 0.45 * Math.abs(Math.sin(ang * 2.3 + seed));
-    const r = baseR * jitter;
-    coords.push([lng + Math.cos(ang) * r * 1.35, lat + Math.sin(ang) * r]);
-  }
-  coords[n] = coords[0];
-  return {
-    type: "Feature",
-    properties: { synthetic: true },
-    geometry: { type: "Polygon", coordinates: [coords] },
-  };
-}
