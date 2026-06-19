@@ -1,10 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Valor de Terras">
-  <rect width="64" height="64" rx="14" fill="#0b2e23"/>
-  <g fill="none" stroke="#2c9069" stroke-width="2" stroke-linecap="round" opacity="0.55">
-    <path d="M6 40c8-3 14-3 22 0s16 3 30-2"/>
-    <path d="M6 48c8-3 14-3 22 0s16 3 30-2"/>
-    <path d="M6 32c8-3 14-3 22 0s16 3 30-2"/>
+  <defs>
+    <linearGradient id="vt-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#11432f"/>
+      <stop offset="1" stop-color="#0a261d"/>
+    </linearGradient>
+    <linearGradient id="vt-pin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e1954b"/>
+      <stop offset="1" stop-color="#c2702a"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#vt-bg)"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="13.5" fill="none" stroke="#2c9069" stroke-width="1" opacity="0.35"/>
+  <g fill="none" stroke="#2c9069" stroke-linecap="round" stroke-width="2.4" opacity="0.45">
+    <path d="M9 44c7-3 12-3 19 0s13 3 27-2"/>
+    <path d="M9 52c7-3 12-3 19 0s13 3 27-2"/>
   </g>
-  <path d="M32 14c-7 0-12.5 5.4-12.5 12.3C19.5 35 32 49 32 49s12.5-14 12.5-22.7C44.5 19.4 39 14 32 14z" fill="#d2843a"/>
-  <circle cx="32" cy="26.4" r="4.6" fill="#0b2e23"/>
+  <path d="M32 11c-7.7 0-14 6.1-14 13.7C18 34.7 32 51 32 51s14-16.3 14-26.3C46 17.1 39.7 11 32 11z" fill="url(#vt-pin)"/>
+  <circle cx="32" cy="24.4" r="5.2" fill="#0b2e23"/>
 </svg>
