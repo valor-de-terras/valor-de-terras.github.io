@@ -70,11 +70,37 @@
   display: flex;
   flex-direction: column;
 }
+.labelLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
 .label {
   font-weight: 600;
   font-size: 0.86rem;
   color: var(--vt-ink);
   line-height: 1.2;
+}
+.tagReal,
+.tagRef {
+  font-family: var(--vt-font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.32rem;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+.tagReal {
+  color: var(--vt-green-800);
+  background: var(--vt-green-100);
+  border: 1px solid var(--vt-green-300);
+}
+.tagRef {
+  color: var(--vt-ink-faint);
+  background: var(--vt-paper-2);
+  border: 1px solid var(--vt-line);
 }
 .source {
   font-family: var(--vt-font-mono);

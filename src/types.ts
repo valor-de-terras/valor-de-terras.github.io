@@ -26,11 +26,13 @@ export interface EnrichmentLayer {
   source: string;
   /** ícone curto (emoji/sigla) só para a demo */
   glyph: string;
-  /** resultado textual mockado */
+  /** resultado textual (real do backend, ou referência) */
   result: string;
   /** fator de homogeneização NBR aplicado a partir desta camada (multiplicador) */
   factor: number;
   accent: string;
+  /** true quando o valor veio de uma fonte aberta consultada de verdade */
+  real?: boolean;
 }
 
 export interface Comparable {

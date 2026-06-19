@@ -1,11 +1,11 @@
 // Edge Function: appraise
-// Orquestra o fluxo síncrono "geometria -> estimativa preliminar" em uma única chamada.
-// É onde, na evolução do produto, entram os conectores reais de dados abertos
-// (MapBiomas STAC, INMET, ANA, EMBRAPA WMS, OSM Overpass) antes de rodar o motor NBR.
-// Hoje o enriquecimento é feito (em stub) dentro da RPC run_preliminary_estimate.
+// Fluxo síncrono real: geometria -> pedido (PostGIS) -> enriquecimento com fontes abertas
+// (relevo/clima/acesso/hidro reais; solo/uso/embargo/comparáveis em referência) ->
+// homogeneização NBR -> estimativa preliminar persistida. Tudo em uma chamada.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { buildEnrichment, centroidOf } from "../_shared/enrich.ts";
 
 interface AppraiseBody {
   geojson: unknown;
@@ -18,18 +18,11 @@ interface AppraiseBody {
 
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin");
-
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders(origin) });
-  }
-  if (req.method !== "POST") {
-    return jsonResponse({ error: "Use POST" }, origin, 405);
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(origin) });
+  if (req.method !== "POST") return jsonResponse({ error: "Use POST" }, origin, 405);
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return jsonResponse({ error: "Autenticação necessária" }, origin, 401);
-  }
+  if (!authHeader) return jsonResponse({ error: "Autenticação necessária" }, origin, 401);
 
   let body: AppraiseBody;
   try {
@@ -37,9 +30,7 @@ Deno.serve(async (req: Request) => {
   } catch {
     return jsonResponse({ error: "JSON inválido no corpo da requisição" }, origin, 400);
   }
-  if (!body?.geojson) {
-    return jsonResponse({ error: "Campo 'geojson' é obrigatório" }, origin, 400);
-  }
+  if (!body?.geojson) return jsonResponse({ error: "Campo 'geojson' é obrigatório" }, origin, 400);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -47,28 +38,33 @@ Deno.serve(async (req: Request) => {
     { global: { headers: { Authorization: authHeader } } },
   );
 
-  const { data: requestId, error: createErr } = await supabase.rpc(
-    "create_appraisal_request",
-    {
-      p_geojson: body.geojson,
-      p_purpose: body.purpose ?? "outro",
-      p_origin: body.origin ?? "geojson",
-      p_car_code: body.car_code ?? null,
-      p_municipality: body.municipality ?? null,
-      p_uf: body.uf ?? null,
-    },
-  );
-  if (createErr) {
-    return jsonResponse({ error: createErr.message }, origin, 400);
+  // 1) cria o pedido (mede área/centroide via PostGIS, valida topologia)
+  const { data: requestId, error: createErr } = await supabase.rpc("create_appraisal_request", {
+    p_geojson: body.geojson,
+    p_purpose: body.purpose ?? "outro",
+    p_origin: body.origin ?? "geojson",
+    p_car_code: body.car_code ?? null,
+    p_municipality: body.municipality ?? null,
+    p_uf: body.uf ?? null,
+  });
+  if (createErr) return jsonResponse({ error: createErr.message }, origin, 400);
+
+  // 2) enriquecimento real a partir do centroide
+  const [lon, lat] = centroidOf(body.geojson);
+  let enrichment;
+  try {
+    enrichment = await buildEnrichment(lon, lat);
+  } catch (e) {
+    enrichment = null; // RPC cairá no catálogo de referência
+    console.error("enrichment failed:", String(e));
   }
 
-  const { data: estimate, error: estErr } = await supabase.rpc(
-    "run_preliminary_estimate",
-    { p_request_id: requestId },
-  );
-  if (estErr) {
-    return jsonResponse({ error: estErr.message, request_id: requestId }, origin, 400);
-  }
+  // 3) homogeneização NBR + estimativa (persistida)
+  const { data: estimate, error: estErr } = await supabase.rpc("run_estimate_with_enrichment", {
+    p_request_id: requestId,
+    p_enrichment: enrichment,
+  });
+  if (estErr) return jsonResponse({ error: estErr.message, request_id: requestId }, origin, 400);
 
-  return jsonResponse({ request_id: requestId, estimate }, origin);
+  return jsonResponse({ request_id: requestId, estimate, enrichment }, origin);
 });

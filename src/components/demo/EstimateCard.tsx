@@ -7,16 +7,31 @@ interface Props {
   result: EstimateResult;
   comparables: Comparable[];
   area: number;
+  serverSide?: boolean;
   onOpenReport: () => void;
 }
 
-export default function EstimateCard({ result, comparables, area, onOpenReport }: Props) {
+export default function EstimateCard({
+  result,
+  comparables,
+  area,
+  serverSide,
+  onOpenReport,
+}: Props) {
   const [showComps, setShowComps] = useState(false);
 
   return (
     <section className={styles.card}>
       <div className={styles.flag}>
         <span className={styles.badge}>Estimativa preliminar</span>
+        {serverSide && (
+          <span
+            className={styles.serverTag}
+            title="Calculada no backend (Supabase + PostGIS) com dados abertos"
+          >
+            <span className={styles.serverDot} /> servidor + dados abertos
+          </span>
+        )}
         <span className={styles.grau}>
           Grau de fundamentação: <strong>{result.grau}</strong> · modelo {result.modelVersion}
         </span>
