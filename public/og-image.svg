@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Valor de Terras">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b2e23"/>
+      <stop offset="1" stop-color="#0a261d"/>
+    </linearGradient>
+    <pattern id="hatch" width="10" height="10" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#2c9069" stroke-width="1.4" opacity="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g fill="none" stroke="#2c9069" stroke-width="1.6" opacity="0.18">
+    <path d="M-40 180 C 240 120, 420 240, 700 180 S 1180 90, 1260 170"/>
+    <path d="M-40 260 C 240 200, 420 320, 700 260 S 1180 160, 1260 250"/>
+    <path d="M-40 360 C 260 270, 460 400, 760 320 S 1220 210, 1260 320"/>
+    <path d="M-40 470 C 260 360, 480 500, 780 410 S 1240 290, 1260 410"/>
+  </g>
+  <!-- parcel motif -->
+  <g transform="translate(840 150)">
+    <path d="M40 240 L60 70 L210 40 L330 90 L350 250 L240 300 L100 290 Z"
+          fill="url(#hatch)" stroke="#7cc3a3" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="200" cy="170" r="9" fill="#d2843a" stroke="#0b2e23" stroke-width="3"/>
+  </g>
+  <!-- brand mark -->
+  <g transform="translate(96 110)">
+    <rect width="64" height="64" rx="16" fill="#11432f" stroke="#2c9069" stroke-width="1.5"/>
+    <path d="M32 18c-7 0-12.5 5.4-12.5 12.3C19.5 39 32 53 32 53s12.5-14 12.5-22.7C44.5 23.4 39 18 32 18z" fill="#d2843a"/>
+    <circle cx="32" cy="30.4" r="4.6" fill="#0b2e23"/>
+  </g>
+  <text x="180" y="138" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="6" fill="#7cc3a3">AVALIACAO RURAL · NBR 14.653</text>
+  <text x="96" y="300" font-family="Georgia, 'Fraunces', serif" font-size="86" font-weight="700" fill="#ffffff">Valor de Terras</text>
+  <text x="98" y="372" font-family="Georgia, 'Fraunces', serif" font-size="40" fill="#cfe8db">Do mapa ao valor do imovel,</text>
+  <text x="98" y="424" font-family="Georgia, 'Fraunces', serif" font-size="40" fill="#cfe8db">em minutos.</text>
+  <text x="98" y="520" font-family="'Inter', sans-serif" font-size="25" fill="#aebfb4">Dados abertos · SIGEF · SICAR · MapBiomas · IBGE · EMBRAPA</text>
+</svg>

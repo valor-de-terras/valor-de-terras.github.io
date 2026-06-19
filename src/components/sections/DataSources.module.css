@@ -1,0 +1,235 @@
+.section {
+  position: relative;
+  padding-block: clamp(3.5rem, 7vw, var(--vt-space-10));
+  background:
+    radial-gradient(120% 130% at 12% -10%, var(--vt-green-100) 0%, transparent 42%),
+    var(--vt-paper);
+  scroll-margin-top: var(--vt-nav-h);
+}
+
+/* ---- Cabeçalho ---- */
+.head {
+  max-width: 60ch;
+}
+.title {
+  font-size: var(--vt-step-4);
+  margin-top: 1rem;
+}
+.lede {
+  margin-top: 1.2rem;
+  font-size: var(--vt-step-1);
+  color: var(--vt-ink-soft);
+  line-height: 1.55;
+  max-width: 58ch;
+}
+
+/* ---- Grade de categorias ---- */
+.grid {
+  margin-top: clamp(2.2rem, 5vw, 3.4rem);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: clamp(1rem, 2.4vw, 1.6rem);
+  align-items: start;
+}
+
+.group {
+  background: var(--vt-paper-2);
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius-lg);
+  padding: 1.25rem 1.3rem 1.4rem;
+  box-shadow: var(--vt-shadow-sm);
+  transition: box-shadow 0.25s var(--vt-ease), border-color 0.25s var(--vt-ease),
+    transform 0.25s var(--vt-ease);
+}
+.group:hover {
+  box-shadow: var(--vt-shadow);
+  border-color: var(--vt-line-strong);
+  transform: translateY(-2px);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--vt-line);
+}
+.groupGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: none;
+  border-radius: var(--vt-radius-sm);
+  background: var(--vt-green-900);
+  color: var(--vt-green-300);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.groupLabel {
+  font-family: var(--vt-font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--vt-green-800);
+  line-height: 1.3;
+}
+.groupCount {
+  margin-left: auto;
+  font-family: var(--vt-font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--vt-ochre-600);
+}
+
+/* ---- Chips de fonte ---- */
+.chips {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.chip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  background: #fff;
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius);
+  padding: 0.6rem 0.8rem;
+  min-height: 44px;
+  justify-content: center;
+  transition: border-color 0.18s var(--vt-ease), background 0.18s var(--vt-ease);
+}
+.chip:hover {
+  border-color: var(--vt-green-500);
+  background: var(--vt-green-100);
+}
+.chipName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--vt-ink);
+  letter-spacing: -0.01em;
+}
+.chipDetail {
+  font-size: 0.74rem;
+  color: var(--vt-ink-faint);
+  line-height: 1.35;
+}
+
+/* ---- Faixa DataSnapshot ---- */
+.snapshot {
+  position: relative;
+  margin-top: clamp(2.4rem, 5vw, 3.6rem);
+  overflow: hidden;
+  border-radius: var(--vt-radius-xl);
+  background: linear-gradient(165deg, var(--vt-green-900), var(--vt-green-950));
+  color: var(--vt-dark-ink);
+  box-shadow: var(--vt-shadow-lg);
+  padding: clamp(1.6rem, 4vw, 2.8rem);
+}
+.snapshot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 92% 6%, rgba(210, 132, 58, 0.2), transparent 46%);
+  pointer-events: none;
+}
+
+/* malha de grade cartográfica decorativa */
+.snapGrid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  pointer-events: none;
+  opacity: 0.5;
+}
+.snapGrid span {
+  border-left: 1px solid var(--vt-dark-line);
+}
+.snapGrid span:first-child {
+  border-left: none;
+}
+
+.snapBody {
+  position: relative;
+  max-width: 64ch;
+}
+.snapBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--vt-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vt-green-300);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--vt-dark-line);
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+}
+.snapDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vt-ochre-500);
+}
+.snapTitle {
+  margin-top: 1.1rem;
+  font-size: var(--vt-step-3);
+  color: #fff;
+  max-width: 22ch;
+}
+.snapText {
+  margin-top: 1rem;
+  font-size: var(--vt-step-0);
+  line-height: 1.6;
+  color: var(--vt-dark-ink-soft);
+  max-width: 56ch;
+}
+
+.snapStats {
+  margin-top: 1.6rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+}
+.snapStat {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--vt-dark-line);
+  border-radius: var(--vt-radius);
+  padding: 0.8rem 0.9rem;
+}
+.snapStat dt {
+  font-family: var(--vt-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vt-green-300);
+}
+.snapStat dd {
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--vt-dark-ink);
+}
+
+/* ---- Responsivo ---- */
+@media (max-width: 940px) {
+  .snapStats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .snapTitle {
+    max-width: none;
+  }
+}

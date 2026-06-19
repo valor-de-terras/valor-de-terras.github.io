@@ -1,0 +1,232 @@
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(3rem, 7vw, 6.5rem);
+  background:
+    radial-gradient(120% 120% at 85% -10%, var(--vt-green-100) 0%, transparent 45%),
+    var(--vt-paper);
+  scroll-margin-top: var(--vt-nav-h);
+}
+
+.topo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--vt-green-700);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+}
+
+@media (max-width: 940px) {
+  .inner {
+    grid-template-columns: 1fr;
+  }
+  .visual {
+    order: -1;
+    max-width: 460px;
+  }
+}
+
+.copy {
+  max-width: 580px;
+}
+
+.title {
+  font-size: var(--vt-step-5);
+  margin-top: 1rem;
+  line-height: 1.02;
+}
+.accent {
+  color: var(--vt-green-700);
+  position: relative;
+  white-space: nowrap;
+}
+.accent::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.04em;
+  height: 0.34em;
+  background: var(--vt-ochre-300);
+  opacity: 0.5;
+  z-index: -1;
+  border-radius: 2px;
+}
+
+.lede {
+  margin-top: 1.3rem;
+  font-size: var(--vt-step-1);
+  color: var(--vt-ink-soft);
+  line-height: 1.55;
+  max-width: 54ch;
+}
+
+.actions {
+  margin-top: 1.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.trust {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.8rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--vt-line);
+}
+.trust li {
+  font-size: 0.84rem;
+  color: var(--vt-ink-faint);
+  max-width: 20ch;
+}
+.trust strong {
+  display: block;
+  font-family: var(--vt-font-display);
+  font-size: 1.05rem;
+  color: var(--vt-green-800);
+  font-weight: 600;
+}
+
+/* ---- Visual / product card ---- */
+.visual {
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  max-width: 440px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius-lg);
+  box-shadow: var(--vt-shadow-lg);
+  overflow: hidden;
+  transform: rotate(-1.2deg);
+  transition: transform 0.4s var(--vt-ease);
+}
+.card:hover {
+  transform: rotate(0deg);
+}
+
+.cardMap {
+  position: relative;
+  aspect-ratio: 320 / 200;
+  background: #eef1ea;
+}
+.parcelSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cardBody {
+  padding: 1rem 1.1rem 1.2rem;
+}
+.cardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.cardLabel {
+  font-size: 0.78rem;
+  color: var(--vt-ink-soft);
+  font-weight: 500;
+}
+.cardArea {
+  font-family: var(--vt-font-mono);
+  font-size: 0.78rem;
+  color: var(--vt-green-700);
+  font-weight: 600;
+}
+
+.cardEstimate {
+  margin-top: 0.7rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--vt-green-900);
+  border-radius: var(--vt-radius);
+  color: #fff;
+}
+.cardEstLabel {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--vt-green-300);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.cardEstValue {
+  display: block;
+  font-family: var(--vt-font-display);
+  font-size: 1.7rem;
+  font-weight: 600;
+  margin-top: 0.1rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.8rem;
+}
+.chips span {
+  font-size: 0.7rem;
+  background: var(--vt-paper-2);
+  border: 1px solid var(--vt-line);
+  color: var(--vt-ink-soft);
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+}
+
+.floatBadge {
+  position: absolute;
+  bottom: -14px;
+  left: -18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #fff;
+  border: 1px solid var(--vt-line);
+  box-shadow: var(--vt-shadow);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--vt-ink);
+}
+.floatDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vt-green-500);
+  box-shadow: 0 0 0 0 rgba(44, 144, 105, 0.5);
+  animation: vt-pulse 2s infinite;
+}
+@keyframes vt-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(44, 144, 105, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(44, 144, 105, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(44, 144, 105, 0);
+  }
+}
+
+@media (max-width: 520px) {
+  .floatBadge {
+    left: 8px;
+  }
+}

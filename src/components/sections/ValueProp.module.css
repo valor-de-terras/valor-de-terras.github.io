@@ -1,0 +1,198 @@
+.section {
+  position: relative;
+  padding-block: clamp(3.5rem, 7vw, 6.5rem);
+  background:
+    radial-gradient(110% 90% at 10% 0%, var(--vt-paper-2) 0%, transparent 55%),
+    var(--vt-paper);
+  border-top: 1px solid var(--vt-line);
+  scroll-margin-top: var(--vt-nav-h);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 0.92fr 1.08fr;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: start;
+}
+
+/* ---- Coluna de texto / proposta central ---- */
+.intro {
+  position: sticky;
+  top: calc(var(--vt-nav-h) + 1.5rem);
+  max-width: 30rem;
+}
+
+.title {
+  font-size: var(--vt-step-4);
+  margin-top: 1rem;
+  line-height: 1.04;
+}
+.accent {
+  color: var(--vt-green-700);
+  position: relative;
+  white-space: nowrap;
+}
+.accent::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.05em;
+  height: 0.32em;
+  background: var(--vt-ochre-300);
+  opacity: 0.5;
+  z-index: -1;
+  border-radius: 2px;
+}
+
+.lede {
+  margin-top: 1.3rem;
+  font-size: var(--vt-step-1);
+  color: var(--vt-ink-soft);
+  line-height: 1.55;
+  max-width: 46ch;
+}
+
+.statRow {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--vt-line);
+}
+.statLabel {
+  font-family: var(--vt-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vt-ink-faint);
+}
+.statValue {
+  margin: 0.3rem 0 0;
+  font-family: var(--vt-font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--vt-green-800);
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+.statArrow {
+  color: var(--vt-ochre-600);
+  font-weight: 400;
+}
+
+.note {
+  margin-top: 1.4rem;
+  font-size: var(--vt-step--1);
+  color: var(--vt-ink-faint);
+  line-height: 1.5;
+  max-width: 38ch;
+}
+
+/* ---- Grade de pilares ---- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(0.9rem, 2vw, 1.3rem);
+}
+
+.cardItem {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius-lg);
+  padding: 1.4rem 1.4rem 1.5rem;
+  box-shadow: var(--vt-shadow-sm);
+  overflow: hidden;
+  transition: transform 0.3s var(--vt-ease), box-shadow 0.3s var(--vt-ease),
+    border-color 0.3s var(--vt-ease);
+}
+.cardItem::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--vt-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--vt-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0;
+  transition: opacity 0.3s var(--vt-ease);
+  pointer-events: none;
+  mask-image: radial-gradient(120% 90% at 100% 0%, #000 0%, transparent 60%);
+}
+.cardItem:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--vt-shadow);
+  border-color: var(--vt-line-strong);
+}
+.cardItem:hover::before {
+  opacity: 0.5;
+}
+
+.cardTop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cardGlyph {
+  display: inline-flex;
+  width: 2.9rem;
+  height: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--vt-radius);
+  background: var(--vt-green-100);
+  color: var(--vt-green-700);
+}
+.cardGlyph svg {
+  width: 60%;
+  height: 60%;
+}
+.cardIndex {
+  font-family: var(--vt-font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--vt-ochre-600);
+}
+
+.cardTitle {
+  position: relative;
+  margin-top: 1rem;
+  font-size: var(--vt-step-1);
+  line-height: 1.15;
+  color: var(--vt-ink);
+}
+
+.cardBody {
+  position: relative;
+  margin-top: 0.55rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--vt-ink-soft);
+}
+
+/* ---- Responsivo ---- */
+@media (max-width: 940px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: clamp(2rem, 6vw, 3rem);
+  }
+  .intro {
+    position: static;
+    max-width: 54ch;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .title {
+    font-size: var(--vt-step-3);
+  }
+}
