@@ -1,7 +1,10 @@
 // Conectores de enriquecimento — fontes abertas consultadas server-side (sem chave).
 // Reais: relevo (DEM Copernicus via Open-Meteo), clima (ERA5 via Open-Meteo archive),
-// acesso e hidrografia (OpenStreetMap via Overpass). Referência (ainda não conectado):
-// solo (EMBRAPA), uso do solo (MapBiomas), embargos (IBAMA), comparáveis (DERAL/CEPEA).
+// acesso e hidrografia (OSM Overpass), uso do solo (MapBiomas Coleção 9 — COG lido por
+// range request com geotiff.js), solo (EMBRAPA SiBCS — WMS GetFeatureInfo).
+// Referência: embargos (IBAMA), comparáveis (DERAL/CEPEA).
+
+import { fromUrl } from "https://esm.sh/geotiff@2.1.3?target=deno";
 
 export interface Layer {
   key: string;
@@ -172,13 +175,121 @@ async function osm(lon: number, lat: number): Promise<{ acesso: Layer; hidro: La
   }
 }
 
-const REF_SOLO = ref("solo", "Solo & aptidão agrícola", "EMBRAPA SiBCS (referência)", 1.12, "Aptidão estimada para lavoura (referência regional; conector EMBRAPA em desenvolvimento)");
-const REF_USO = ref("uso", "Uso e cobertura do solo", "MapBiomas (referência)", 1.06, "Predomínio agropecuário (referência regional; conector MapBiomas em desenvolvimento)");
+// ---- Uso do solo: MapBiomas Coleção 9 (COG nacional 30 m, lido por range request) ----
+const MB_URL =
+  "https://storage.googleapis.com/mapbiomas-public/initiatives/brasil/collection_9/lclu/coverage/brasil_coverage_2023.tif";
+
+// classe MapBiomas -> [nome, fator, é uso agropecuário?]
+const MB: Record<number, [string, number, boolean]> = {
+  3: ["Formação Florestal", 0.96, false], 4: ["Formação Savânica", 0.97, false],
+  5: ["Mangue", 0.85, false], 6: ["Floresta Alagável", 0.9, false],
+  9: ["Silvicultura", 1.05, true], 11: ["Área Úmida", 0.88, false],
+  12: ["Formação Campestre", 0.98, false], 15: ["Pastagem", 1.04, true],
+  18: ["Agricultura", 1.08, true], 19: ["Lavoura Temporária", 1.08, true],
+  20: ["Cana", 1.06, true], 21: ["Mosaico de Usos", 1.05, true],
+  23: ["Praia/Duna", 0.85, false], 24: ["Área Urbanizada", 0.9, false],
+  25: ["Outra Área não Vegetada", 0.9, false], 29: ["Afloramento Rochoso", 0.85, false],
+  30: ["Mineração", 0.9, false], 31: ["Aquicultura", 0.9, false],
+  33: ["Rio/Lago/Oceano", 0.85, false], 35: ["Dendê", 1.05, true],
+  36: ["Lavoura Perene", 1.06, true], 39: ["Soja", 1.1, true],
+  40: ["Arroz", 1.05, true], 41: ["Outra Lavoura Temporária", 1.06, true],
+  46: ["Café", 1.08, true], 47: ["Citrus", 1.07, true],
+  48: ["Outra Lavoura Perene", 1.05, true], 62: ["Algodão", 1.07, true],
+};
+
+async function uso(lon: number, lat: number): Promise<Layer> {
+  const { signal, clear } = withTimeout(16000);
+  try {
+    const tiff = await fromUrl(MB_URL, { signal } as any);
+    const img = await tiff.getImage();
+    const [ox, oy] = img.getOrigin();
+    const [rx, ry] = img.getResolution();
+    const W = img.getWidth();
+    const H = img.getHeight();
+    const dd = 0.004;
+    const pts: [number, number][] = [
+      [lon, lat], [lon + dd, lat], [lon - dd, lat], [lon, lat + dd], [lon, lat - dd],
+    ];
+    const classes: number[] = [];
+    for (const [x, y] of pts) {
+      const px = Math.floor((x - ox) / rx);
+      const py = Math.floor((y - oy) / ry);
+      if (px < 0 || py < 0 || px >= W || py >= H) continue;
+      const d = await img.readRasters({ window: [px, py, px + 1, py + 1] });
+      const v = Number((d[0] as ArrayLike<number>)[0]);
+      if (v && v > 0) classes.push(v);
+    }
+    clear();
+    if (!classes.length) throw new Error("sem dados MapBiomas");
+    const counts: Record<number, number> = {};
+    for (const c of classes) counts[c] = (counts[c] ?? 0) + 1;
+    const dom = Number(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
+    const agPct = Math.round((classes.filter((c) => MB[c]?.[2]).length / classes.length) * 100);
+    const info = MB[dom] ?? [`Classe ${dom}`, 1.0, false];
+    return {
+      key: "uso", label: "Uso e cobertura do solo", source: "MapBiomas Coleção 9 (2023)",
+      factor: info[1] as number,
+      result: `Predomínio: ${info[0]} (${agPct}% agropecuário na amostra)`,
+      real: true, payload: { dominant_class: dom, ag_pct: agPct, samples: classes },
+    };
+  } catch (_) {
+    clear();
+    return ref("uso", "Uso e cobertura do solo", "MapBiomas (indisponível, referência)", 1.06, "Uso não consultado (fonte indisponível)");
+  }
+}
+
+// ---- Solo: EMBRAPA SiBCS (WMS GetFeatureInfo, mapa 1:5M) ----
+const SOLO: Record<string, [number, string]> = {
+  LATOSSOLOS: [1.1, "boa aptidão, profundo e mecanizável"],
+  NITOSSOLOS: [1.12, "alta aptidão agrícola"],
+  ARGISSOLOS: [1.04, "aptidão moderada"],
+  CHERNOSSOLOS: [1.1, "alta fertilidade natural"],
+  CAMBISSOLOS: [1.0, "aptidão moderada (pouco profundo)"],
+  NEOSSOLOS: [0.95, "aptidão restrita (variável)"],
+  GLEISSOLOS: [0.92, "hidromórfico, restrição de drenagem"],
+  ORGANOSSOLOS: [0.9, "orgânico, restrição p/ lavoura convencional"],
+  PLANOSSOLOS: [0.95, "restrição de drenagem"],
+  PLINTOSSOLOS: [0.9, "restrição por plintita"],
+  ESPODOSSOLOS: [0.9, "arenoso, baixa fertilidade"],
+  VERTISSOLOS: [0.98, "argiloso, exige manejo"],
+  LUVISSOLOS: [1.0, "aptidão moderada"],
+};
+
+async function solo(lon: number, lat: number): Promise<Layer> {
+  const { signal, clear } = withTimeout(12000);
+  const d = 0.02;
+  const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
+  const url =
+    `https://geoinfo.dados.embrapa.br/geoserver/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo` +
+    `&LAYERS=geonode:brasil_solos_5m_20201104&QUERY_LAYERS=geonode:brasil_solos_5m_20201104` +
+    `&SRS=EPSG:4326&BBOX=${bbox}&WIDTH=101&HEIGHT=101&X=50&Y=50&INFO_FORMAT=application/json&FEATURE_COUNT=1&BUFFER=10`;
+  try {
+    const r = await fetch(url, { signal });
+    const j = await r.json();
+    clear();
+    const p = j.features?.[0]?.properties;
+    if (!p) throw new Error("sem solo EMBRAPA");
+    const ordem = String(p.ordem1 ?? "").toUpperCase();
+    const comp = String(p.comp1 ?? p.leg_sinot ?? ordem ?? "Solo");
+    const info = SOLO[ordem] ?? [1.0, "aptidão moderada"];
+    return {
+      key: "solo", label: "Solo & aptidão agrícola", source: "EMBRAPA SiBCS (1:5M)",
+      factor: info[0], result: `${comp} — ${info[1]}`, real: true,
+      payload: { ordem, simbolo: p.classe_dom, comp1: p.comp1 },
+    };
+  } catch (_) {
+    clear();
+    return ref("solo", "Solo & aptidão agrícola", "EMBRAPA (indisponível, referência)", 1.12, "Solo não consultado (fonte indisponível)");
+  }
+}
+
 const REF_EMBARGO = ref("embargo", "Restrições & embargos", "IBAMA / ICMBio (referência)", 1.0, "Sem embargos conhecidos (verificação oficial recomendada)");
 const REF_COMP = ref("comp", "Comparáveis de mercado", "DERAL/SEAB-PR + CEPEA (referência)", 1.0, "Comparáveis de referência regional");
 
 /** Monta as 8 camadas (ordem do catálogo): relevo, solo, uso, clima, hidro, acesso, embargo, comp. */
 export async function buildEnrichment(lon: number, lat: number): Promise<Layer[]> {
-  const [rel, cli, o] = await Promise.all([relevo(lon, lat), clima(lon, lat), osm(lon, lat)]);
-  return [rel, REF_SOLO, REF_USO, cli, o.hidro, o.acesso, REF_EMBARGO, REF_COMP];
+  const [rel, so, us, cli, o] = await Promise.all([
+    relevo(lon, lat), solo(lon, lat), uso(lon, lat), clima(lon, lat), osm(lon, lat),
+  ]);
+  return [rel, so, us, cli, o.hidro, o.acesso, REF_EMBARGO, REF_COMP];
 }
