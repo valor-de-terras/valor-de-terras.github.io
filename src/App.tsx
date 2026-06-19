@@ -4,6 +4,7 @@ import Hero from "./components/sections/Hero";
 import Problem from "./components/sections/Problem";
 import ValueProp from "./components/sections/ValueProp";
 import HowItWorks from "./components/sections/HowItWorks";
+import Compliance from "./components/sections/Compliance";
 import DemoSection from "./components/sections/DemoSection";
 import DataSources from "./components/sections/DataSources";
 import Audience from "./components/sections/Audience";
@@ -26,6 +27,7 @@ export default function App() {
         <Problem />
         <ValueProp />
         <HowItWorks />
+        <Compliance />
         <DemoSection />
         <DataSources />
         <Audience />

@@ -27,8 +27,8 @@ const ITEMS: QA[] = [
     a: (
       <p>
         A engine aplica o método comparativo direto de dados de mercado e fatores de
-        homogeneização da norma; a revisão técnica humana confere e pode elevar o grau de
-        fundamentação (Expedito, Normal, Rigoroso).
+        homogeneização da norma; a estimativa automatizada corresponde no máximo ao Grau I
+        (preliminar), e a revisão técnica com ART pode elevar para os Graus II e III.
       </p>
     ),
   },

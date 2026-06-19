@@ -88,7 +88,7 @@ export default function ReportPreview({
                 </div>
                 <div>
                   <dt>Grau de fundamentação</dt>
-                  <dd>{estimate.grau}</dd>
+                  <dd>Grau {estimate.grau} (preliminar)</dd>
                 </div>
               </dl>
             </div>
@@ -216,11 +216,13 @@ export default function ReportPreview({
 
             <Section n="7" title="Responsabilidade técnica">
               <p className={styles.warn}>
-                <strong>Documento de demonstração.</strong> Esta prévia é gerada com dados
-                sintéticos para ilustrar o produto e <strong>não</strong> constitui laudo de
-                avaliação. O laudo formal, com valor jurídico, depende de enriquecimento a partir
-                de fontes oficiais e de emissão de ART por engenheiro avaliador habilitado junto
-                ao CREA, responsável técnico pela avaliação.
+                <strong>Estimativa preliminar (Grau I).</strong> Esta prévia é automatizada,
+                a partir de geometria e dados abertos reais, e corresponde no máximo ao Grau I de
+                fundamentação da NBR 14.653-3. <strong>Não</strong> constitui laudo de avaliação.
+                A avaliação de imóveis rurais é atribuição privativa de Engenheiro Agrônomo ou
+                Engenheiro Florestal com registro ativo no CREA, mediante Anotação de
+                Responsabilidade Técnica (ART). Os Graus II e III, de maior fundamentação,
+                dependem da revisão e da qualificação do responsável técnico.
               </p>
             </Section>
           </article>

@@ -57,8 +57,10 @@ export async function appraiseViaBackend(
   if (!data || data.error) throw new Error(data?.error ?? "Resposta inválida do backend");
 
   const est = data.estimate;
+  // A estimativa automatizada corresponde, no máximo, ao Grau I (preliminar) da
+  // NBR 14.653-3. Graus II/III dependem da revisão e qualificação do responsável técnico.
   const grau: EstimateResult["grau"] =
-    est.grade === "rigoroso" ? "Rigoroso" : est.grade === "expedito" ? "Expedito" : "Normal";
+    est.grade === "iii" ? "III" : est.grade === "ii" ? "II" : "I";
 
   const estimate: EstimateResult = {
     min: est.total.min,

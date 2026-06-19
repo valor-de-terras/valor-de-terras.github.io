@@ -52,7 +52,9 @@ export interface EstimateResult {
   pricePerHaMin: number;
   pricePerHaAvg: number;
   pricePerHaMax: number;
-  grau: "Expedito" | "Normal" | "Rigoroso";
+  /** Grau de fundamentação NBR 14.653-3: I, II ou III. A automação entrega no máximo
+   *  Grau I (preliminar); a revisão técnica com ART pode elevar para II/III. */
+  grau: "I" | "II" | "III";
   comparablesUsed: number;
   modelVersion: string;
 }
