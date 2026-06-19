@@ -33,7 +33,8 @@ export default function EstimateCard({
           </span>
         )}
         <span className={styles.grau}>
-          Grau de fundamentação: <strong>{result.grau}</strong> · modelo {result.modelVersion}
+          Fundamentação NBR 14.653-3: <strong>Grau {result.grau}</strong> (preliminar) · modelo{" "}
+          {result.modelVersion}
         </span>
       </div>
 
@@ -108,11 +109,11 @@ export default function EstimateCard({
       </div>
 
       <p className={styles.disclaimer}>
-        Estimativa preliminar calculada sobre a geometria informada (CAR real do SICAR ou
-        arquivo enviado). Os fatores de homogeneização e os comparáveis ainda são
-        ilustrativos nesta versão. Não constitui laudo nem parecer técnico: o laudo formal
-        exige enriquecimento com fontes oficiais e responsabilidade técnica (ART) de
-        profissional habilitado no CREA.
+        Estimativa preliminar (Grau I da NBR 14.653-3), calculada sobre a geometria informada
+        (CAR real do SICAR ou arquivo enviado) e dados abertos reais (relevo, solo, uso, clima,
+        acesso e referências DERAL/SEAB-PR). Não constitui laudo nem parecer técnico: a avaliação
+        de imóvel rural é atribuição privativa de Engenheiro Agrônomo ou Florestal com CREA e ART.
+        Os Graus II e III dependem da revisão técnica.
       </p>
     </section>
   );

@@ -201,7 +201,7 @@ export function computeEstimate(
       pricePerHaMin,
       pricePerHaAvg,
       pricePerHaMax,
-      grau: "Normal",
+      grau: "I",
       comparablesUsed: comparables.length,
       modelVersion: "homog-nbr-0.3.1",
     },
