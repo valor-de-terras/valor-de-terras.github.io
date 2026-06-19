@@ -66,5 +66,16 @@ Deno.serve(async (req: Request) => {
   });
   if (estErr) return jsonResponse({ error: estErr.message, request_id: requestId }, origin, 400);
 
+  // mescla o comparável real (DERAL/SEAB-PR) calculado na RPC de volta no enriquecimento
+  if (estimate?.comp && Array.isArray(enrichment)) {
+    const c = enrichment.find((l) => l.key === "comp");
+    if (c) {
+      c.result = estimate.comp.result;
+      c.source = estimate.comp.source;
+      c.factor = estimate.comp.factor;
+      c.real = estimate.comp.real;
+    }
+  }
+
   return jsonResponse({ request_id: requestId, estimate, enrichment }, origin);
 });

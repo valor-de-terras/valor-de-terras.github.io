@@ -283,13 +283,49 @@ async function solo(lon: number, lat: number): Promise<Layer> {
   }
 }
 
-const REF_EMBARGO = ref("embargo", "Restrições & embargos", "IBAMA / ICMBio (referência)", 1.0, "Sem embargos conhecidos (verificação oficial recomendada)");
-const REF_COMP = ref("comp", "Comparáveis de mercado", "DERAL/SEAB-PR + CEPEA (referência)", 1.0, "Comparáveis de referência regional");
+// ---- Embargos: IBAMA Áreas Embargadas (WMS GetFeatureInfo) ----
+async function embargo(lon: number, lat: number): Promise<Layer> {
+  const { signal, clear } = withTimeout(10000);
+  const d = 0.01;
+  const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
+  const url =
+    `https://siscom.ibama.gov.br/geoserver/publica/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo` +
+    `&LAYERS=publica:vw_brasil_adm_embargo_a&QUERY_LAYERS=publica:vw_brasil_adm_embargo_a` +
+    `&SRS=EPSG:4326&BBOX=${bbox}&WIDTH=101&HEIGHT=101&X=50&Y=50&INFO_FORMAT=application/json&FEATURE_COUNT=1&BUFFER=10`;
+  try {
+    const r = await fetch(url, { signal });
+    if (!r.ok) throw new Error("ibama " + r.status);
+    const j = await r.json();
+    clear();
+    const f = j.features?.[0];
+    if (f) {
+      const p = f.properties ?? {};
+      const motivo = p.des_infrac ?? p.des_tad ?? p.julgamento ?? "";
+      return {
+        key: "embargo", label: "Restrições & embargos", source: "IBAMA — Áreas Embargadas",
+        factor: 0.6, real: true,
+        result: `Sobreposição com área embargada do IBAMA${motivo ? ` (${String(motivo).slice(0, 40)})` : ""}`,
+        payload: p,
+      };
+    }
+    return {
+      key: "embargo", label: "Restrições & embargos", source: "IBAMA — Áreas Embargadas",
+      factor: 1.0, real: true, result: "Sem sobreposição com áreas embargadas do IBAMA",
+    };
+  } catch (_) {
+    clear();
+    return ref("embargo", "Restrições & embargos", "IBAMA (indisponível, referência)", 1.0, "Embargos não verificados (serviço IBAMA indisponível no momento)");
+  }
+}
+
+// Placeholder de comparáveis; o valor real (DERAL/SEAB-PR) é preenchido pela RPC e
+// mesclado de volta na Edge Function após a estimativa.
+const REF_COMP = ref("comp", "Comparáveis de mercado", "DERAL/SEAB-PR", 1.0, "Referência DERAL/SEAB-PR");
 
 /** Monta as 8 camadas (ordem do catálogo): relevo, solo, uso, clima, hidro, acesso, embargo, comp. */
 export async function buildEnrichment(lon: number, lat: number): Promise<Layer[]> {
-  const [rel, so, us, cli, o] = await Promise.all([
-    relevo(lon, lat), solo(lon, lat), uso(lon, lat), clima(lon, lat), osm(lon, lat),
+  const [rel, so, us, cli, o, emb] = await Promise.all([
+    relevo(lon, lat), solo(lon, lat), uso(lon, lat), clima(lon, lat), osm(lon, lat), embargo(lon, lat),
   ]);
-  return [rel, so, us, cli, o.hidro, o.acesso, REF_EMBARGO, REF_COMP];
+  return [rel, so, us, cli, o.hidro, o.acesso, emb, REF_COMP];
 }
