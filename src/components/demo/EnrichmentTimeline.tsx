@@ -28,7 +28,14 @@ export default function EnrichmentTimeline({ layers, activeCount, done }: Props)
               </span>
               <div className={styles.body}>
                 <div className={styles.row}>
-                  <span className={styles.label}>{l.label}</span>
+                  <span className={styles.labelLine}>
+                    <span className={styles.label}>{l.label}</span>
+                    {l.real !== undefined && (
+                      <span className={l.real ? styles.tagReal : styles.tagRef}>
+                        {l.real ? "real" : "ref."}
+                      </span>
+                    )}
+                  </span>
                   <span className={styles.source}>{l.source}</span>
                 </div>
                 {state === "done" && <p className={styles.result}>{l.result}</p>}

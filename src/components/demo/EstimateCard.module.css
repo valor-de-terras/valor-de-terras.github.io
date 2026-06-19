@@ -33,6 +33,25 @@
   padding: 0.28rem 0.6rem;
   border-radius: 999px;
 }
+.serverTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--vt-green-300);
+  background: rgba(124, 195, 163, 0.12);
+  border: 1px solid rgba(124, 195, 163, 0.3);
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+}
+.serverDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vt-green-300);
+}
 .grau {
   font-size: 0.74rem;
   color: var(--vt-dark-ink-soft);

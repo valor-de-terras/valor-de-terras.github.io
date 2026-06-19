@@ -6,18 +6,20 @@ import ReportPreview from "./ReportPreview";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
 import { areaHa } from "../../lib/geo";
 import { fetchCarAtPoint, municipioBasePrice } from "../../lib/sicar";
+import { appraiseViaBackend } from "../../lib/backend";
 import {
   ENRICHMENT_LAYERS,
   SAMPLE_PARCELS,
   computeEstimate,
   type SampleParcel,
 } from "../../data/demo";
-import type { Comparable, EstimateResult } from "../../types";
+import type { Comparable, EnrichmentLayer, EstimateResult } from "../../types";
 import { fmtArea } from "../../lib/format";
 import styles from "./MapDemo.module.css";
 
 type Mode = "sample" | "car" | "upload";
 type Status = "empty" | "ready" | "enriching" | "done";
+type PropertyOriginLite = "car" | "kml" | "kmz" | "shp" | "geojson";
 
 interface Meta {
   name: string;
@@ -25,6 +27,7 @@ interface Meta {
   uf: string;
   carCode: string;
   basePricePerHa: number;
+  origin: PropertyOriginLite;
 }
 
 const STEP_MS = 540;
@@ -40,7 +43,10 @@ export default function MapDemo() {
     centroid: [number, number];
     estimate: EstimateResult;
     comparables: Comparable[];
+    layers: EnrichmentLayer[];
   } | null>(null);
+  const [liveLayers, setLiveLayers] = useState<EnrichmentLayer[]>(ENRICHMENT_LAYERS);
+  const [backendUsed, setBackendUsed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -64,6 +70,8 @@ export default function MapDemo() {
     setStatus("empty");
     setActiveLayers(0);
     setResult(null);
+    setLiveLayers(ENRICHMENT_LAYERS);
+    setBackendUsed(false);
     setError(null);
   }, []);
 
@@ -84,6 +92,7 @@ export default function MapDemo() {
       uf: s.uf,
       carCode: s.carCode,
       basePricePerHa: s.basePricePerHa,
+      origin: "car",
     });
   };
 
@@ -113,6 +122,7 @@ export default function MapDemo() {
           uf: hit.uf,
           carCode: hit.codImovel,
           basePricePerHa: municipioBasePrice(hit.municipio, hit.uf),
+          origin: "car",
         });
       } catch (e) {
         if ((e as Error)?.name !== "AbortError") {
@@ -139,12 +149,16 @@ export default function MapDemo() {
           setError("Não foi possível medir a área — verifique se o arquivo contém polígonos.");
           return;
         }
+        const ext = (file.name.split(".").pop() ?? "").toLowerCase();
+        const origin: PropertyOriginLite =
+          ext === "kml" ? "kml" : ext === "kmz" ? "kmz" : ext === "shp" || ext === "zip" ? "shp" : "geojson";
         adoptParcel(geo, {
           name: file.name.replace(/\.[^.]+$/, ""),
           municipality: "Importado do arquivo",
           uf: "—",
           carCode: "—",
           basePricePerHa: 74000,
+          origin,
         });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Falha ao ler o arquivo.");
@@ -158,16 +172,50 @@ export default function MapDemo() {
     clearTimers();
     setStatus("enriching");
     setActiveLayers(0);
-    ENRICHMENT_LAYERS.forEach((_, i) => {
+    setLiveLayers(ENRICHMENT_LAYERS);
+    setBackendUsed(false);
+    const N = ENRICHMENT_LAYERS.length;
+    // animação de progresso enquanto o servidor consulta as fontes (deixa a última "ativa")
+    for (let i = 0; i < N - 1; i++) {
       const t = window.setTimeout(() => setActiveLayers(i + 1), STEP_MS * (i + 1));
       timersRef.current.push(t);
-    });
-    const finalT = window.setTimeout(() => {
+    }
+
+    const finishLocal = () => {
       const r = computeEstimate(parcel, meta.basePricePerHa, ENRICHMENT_LAYERS);
-      setResult(r);
+      setResult({ ...r, layers: ENRICHMENT_LAYERS });
+      setLiveLayers(ENRICHMENT_LAYERS);
+      setBackendUsed(false);
+      setActiveLayers(N);
       setStatus("done");
-    }, STEP_MS * (ENRICHMENT_LAYERS.length + 1));
-    timersRef.current.push(finalT);
+    };
+
+    appraiseViaBackend(parcel, {
+      municipality: meta.municipality,
+      uf: meta.uf,
+      carCode: meta.carCode,
+      origin: meta.origin,
+    })
+      .then((r) => {
+        clearTimers();
+        setLiveLayers(r.layers);
+        setResult({
+          area: r.area,
+          centroid: r.centroid,
+          estimate: r.estimate,
+          comparables: r.comparables,
+          layers: r.layers,
+        });
+        setBackendUsed(true);
+        setActiveLayers(N);
+        setStatus("done");
+      })
+      .catch(() => {
+        // fallback offline: motor client-side (mantém o site funcional sem o backend)
+        clearTimers();
+        const t = window.setTimeout(finishLocal, STEP_MS * 2);
+        timersRef.current.push(t);
+      });
   };
 
   useEffect(() => () => clearTimers(), []);
@@ -353,7 +401,7 @@ export default function MapDemo() {
 
           {(status === "enriching" || status === "done") && (
             <EnrichmentTimeline
-              layers={ENRICHMENT_LAYERS}
+              layers={liveLayers}
               activeCount={activeLayers}
               done={status === "done"}
             />
@@ -364,6 +412,7 @@ export default function MapDemo() {
               result={result.estimate}
               comparables={result.comparables}
               area={result.area}
+              serverSide={backendUsed}
               onOpenReport={() => setReportOpen(true)}
             />
           )}
@@ -378,7 +427,7 @@ export default function MapDemo() {
           centroid={result.centroid}
           estimate={result.estimate}
           comparables={result.comparables}
-          layers={ENRICHMENT_LAYERS}
+          layers={result.layers}
         />
       )}
     </div>
