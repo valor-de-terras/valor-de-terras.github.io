@@ -1,0 +1,234 @@
+.section {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(3.5rem, 7vw, 7rem);
+  background:
+    radial-gradient(120% 110% at 12% -10%, var(--vt-green-100) 0%, transparent 42%),
+    var(--vt-paper);
+  border-top: 1px solid var(--vt-line);
+  scroll-margin-top: var(--vt-nav-h);
+}
+
+/* malha cartográfica de fundo */
+.gridArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--vt-green-700);
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.head {
+  position: relative;
+  max-width: 640px;
+  margin-bottom: clamp(2rem, 4vw, 3.2rem);
+}
+.title {
+  font-size: var(--vt-step-3);
+  margin-top: 0.7rem;
+}
+.lede {
+  margin-top: 0.85rem;
+  font-size: var(--vt-step-1);
+  color: var(--vt-ink-soft);
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+/* ---- Grade de cartões ---- */
+.grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(1rem, 2vw, 1.4rem);
+  align-items: stretch;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius-lg);
+  box-shadow: var(--vt-shadow-sm);
+  padding: 1.6rem 1.4rem 1.5rem;
+  transition: transform 0.28s var(--vt-ease), box-shadow 0.28s var(--vt-ease),
+    border-color 0.28s var(--vt-ease);
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--vt-shadow);
+  border-color: var(--vt-line-strong);
+}
+
+/* cartão em destaque: Por laudo */
+.cardFeatured {
+  border-color: var(--vt-green-600);
+  border-width: 1.5px;
+  box-shadow: var(--vt-shadow);
+  background:
+    linear-gradient(180deg, rgba(207, 232, 219, 0.35) 0%, transparent 36%),
+    #fff;
+}
+.cardFeatured:hover {
+  border-color: var(--vt-green-700);
+  box-shadow: var(--vt-shadow-lg);
+}
+
+.popular {
+  position: absolute;
+  top: -0.85rem;
+  left: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--vt-font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--vt-ochre-600);
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  box-shadow: var(--vt-shadow-sm);
+}
+
+.cardEyebrow {
+  font-family: var(--vt-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vt-ink-faint);
+}
+.cardName {
+  font-size: var(--vt-step-2);
+  margin-top: 0.35rem;
+  color: var(--vt-green-800);
+}
+
+.priceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--vt-line);
+  min-height: 5.2rem;
+}
+.price {
+  font-family: var(--vt-font-display);
+  font-size: clamp(1.8rem, 1.4rem + 1.4vw, 2.3rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--vt-ink);
+}
+.cardFeatured .price {
+  color: var(--vt-green-700);
+}
+.priceUnit {
+  font-family: var(--vt-font-mono);
+  font-size: 0.74rem;
+  color: var(--vt-green-700);
+  font-weight: 600;
+}
+.priceNote {
+  font-size: 0.78rem;
+  color: var(--vt-ink-soft);
+  line-height: 1.4;
+}
+
+.blurb {
+  margin-top: 1rem;
+  font-size: 0.86rem;
+  color: var(--vt-ink-soft);
+  line-height: 1.5;
+}
+
+.features {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1 1 auto;
+}
+.features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--vt-ink-soft);
+  line-height: 1.4;
+}
+.check {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.06rem;
+  border-radius: 50%;
+  background: var(--vt-green-100);
+  color: var(--vt-green-700);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.cardCta {
+  margin-top: 1.4rem;
+  width: 100%;
+  min-height: 44px;
+}
+
+/* aviso discreto */
+.note {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  max-width: 60ch;
+  margin-top: clamp(1.8rem, 3vw, 2.6rem);
+  margin-inline: auto;
+  text-align: left;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--vt-ink-faint);
+}
+.noteMark {
+  flex: none;
+  margin-top: 0.12rem;
+  color: var(--vt-ochre-500);
+  font-size: 0.7rem;
+}
+
+/* ---- Responsivo ---- */
+@media (max-width: 940px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .popular {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .priceBlock {
+    min-height: 0;
+  }
+  .popular {
+    left: 1.4rem;
+    transform: none;
+  }
+  .note {
+    margin-inline: 0;
+  }
+}

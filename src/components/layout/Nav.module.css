@@ -1,0 +1,123 @@
+.nav,
+.navScrolled {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--vt-nav-h);
+  display: flex;
+  align-items: center;
+  transition: background 0.25s var(--vt-ease), box-shadow 0.25s var(--vt-ease),
+    border-color 0.25s var(--vt-ease);
+  border-bottom: 1px solid transparent;
+}
+.nav {
+  background: rgba(247, 244, 236, 0.6);
+  backdrop-filter: blur(8px);
+}
+.navScrolled {
+  background: rgba(247, 244, 236, 0.9);
+  backdrop-filter: blur(12px);
+  border-bottom-color: var(--vt-line);
+  box-shadow: var(--vt-shadow-sm);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--vt-font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+.mark {
+  border-radius: 8px;
+}
+.brandText {
+  color: var(--vt-ink);
+}
+.brandAccent {
+  color: var(--vt-ochre-600);
+  font-style: italic;
+  padding: 0 1px;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-left: auto;
+}
+.link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--vt-ink-soft);
+  transition: color 0.15s var(--vt-ease);
+  position: relative;
+}
+.link:hover {
+  color: var(--vt-green-800);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+}
+.cta {
+  padding: 0.55rem 1.1rem;
+  font-size: 0.88rem;
+}
+
+.burger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 6px;
+  margin-left: auto;
+}
+.burger span {
+  width: 22px;
+  height: 2px;
+  background: var(--vt-ink);
+  border-radius: 2px;
+}
+
+.mobile {
+  position: absolute;
+  top: var(--vt-nav-h);
+  left: 0;
+  right: 0;
+  background: var(--vt-paper);
+  border-bottom: 1px solid var(--vt-line);
+  box-shadow: var(--vt-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem clamp(1.1rem, 4vw, 2.5rem);
+}
+.mobileLink {
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  color: var(--vt-ink);
+  border-bottom: 1px solid var(--vt-line);
+}
+
+@media (max-width: 820px) {
+  .links,
+  .actions {
+    display: none;
+  }
+  .burger {
+    display: flex;
+  }
+}

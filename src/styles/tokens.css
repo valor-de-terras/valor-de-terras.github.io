@@ -1,0 +1,91 @@
+/*
+  Valor de Terras — Design tokens
+  Identidade: cartográfica, técnica e terrosa. Verde floresta profundo + ocre/terracota,
+  superfícies cor de papel, tipografia serifada (Fraunces) para títulos e Inter para corpo.
+  NÃO é o visual genérico de SaaS roxo. Pensar: mapa topográfico, laudo técnico, agro sério.
+*/
+:root {
+  /* ---- Paleta base ---- */
+  --vt-paper: #f7f4ec; /* superfície primária, cor de papel */
+  --vt-paper-2: #efeadd; /* superfície secundária */
+  --vt-paper-3: #e7e0cf; /* cartões/realces sutis */
+  --vt-ink: #1b211d; /* texto principal, verde-quase-preto */
+  --vt-ink-soft: #45504a; /* texto secundário */
+  --vt-ink-faint: #6c756e; /* texto terciário / legendas */
+  --vt-line: #ddd5c2; /* bordas em superfície clara */
+  --vt-line-strong: #c9bfa6;
+
+  /* Verdes (marca / floresta) */
+  --vt-green-950: #0a261d;
+  --vt-green-900: #0b2e23;
+  --vt-green-800: #11432f;
+  --vt-green-700: #165c3f;
+  --vt-green-600: #1f7551;
+  --vt-green-500: #2c9069;
+  --vt-green-300: #7cc3a3;
+  --vt-green-100: #cfe8db;
+
+  /* Ocre / terracota (acento) */
+  --vt-ochre-700: #9a571f;
+  --vt-ochre-600: #bd6c28;
+  --vt-ochre-500: #d2843a;
+  --vt-ochre-300: #e7b483;
+  --vt-ochre-100: #f6e3cd;
+
+  /* Estados */
+  --vt-clay: #b5462f; /* atenção / risco */
+  --vt-sky: #2f6f8f; /* dado/hidro */
+  --vt-gold: #c79a2e; /* destaque/valor */
+
+  /* Superfícies escuras (hero, footer) */
+  --vt-dark-bg: #0b2e23;
+  --vt-dark-bg-2: #0a261d;
+  --vt-dark-ink: #eef3ee;
+  --vt-dark-ink-soft: #aebfb4;
+  --vt-dark-line: rgba(208, 226, 215, 0.16);
+
+  /* ---- Tipografia ---- */
+  --vt-font-display: "Fraunces", "Georgia", serif;
+  --vt-font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --vt-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  /* escala fluida */
+  --vt-step--1: clamp(0.78rem, 0.74rem + 0.18vw, 0.86rem);
+  --vt-step-0: clamp(0.95rem, 0.9rem + 0.25vw, 1.05rem);
+  --vt-step-1: clamp(1.16rem, 1.08rem + 0.4vw, 1.35rem);
+  --vt-step-2: clamp(1.4rem, 1.28rem + 0.62vw, 1.85rem);
+  --vt-step-3: clamp(1.72rem, 1.5rem + 1.1vw, 2.6rem);
+  --vt-step-4: clamp(2.1rem, 1.7rem + 2vw, 3.6rem);
+  --vt-step-5: clamp(2.6rem, 2rem + 3vw, 4.8rem);
+
+  /* ---- Espaçamento ---- */
+  --vt-space-1: 0.25rem;
+  --vt-space-2: 0.5rem;
+  --vt-space-3: 0.75rem;
+  --vt-space-4: 1rem;
+  --vt-space-5: 1.5rem;
+  --vt-space-6: 2rem;
+  --vt-space-7: 3rem;
+  --vt-space-8: 4rem;
+  --vt-space-9: 6rem;
+  --vt-space-10: 8rem;
+
+  /* ---- Raios / sombras ---- */
+  --vt-radius-sm: 6px;
+  --vt-radius: 12px;
+  --vt-radius-lg: 18px;
+  --vt-radius-xl: 28px;
+  --vt-shadow-sm: 0 1px 2px rgba(16, 40, 30, 0.06), 0 1px 3px rgba(16, 40, 30, 0.04);
+  --vt-shadow: 0 6px 20px -8px rgba(16, 40, 30, 0.18), 0 2px 6px rgba(16, 40, 30, 0.06);
+  --vt-shadow-lg: 0 24px 60px -22px rgba(11, 46, 35, 0.34), 0 8px 24px -12px rgba(11, 46, 35, 0.18);
+
+  /* ---- Layout ---- */
+  --vt-maxw: 1180px;
+  --vt-maxw-wide: 1320px;
+  --vt-maxw-prose: 720px;
+  --vt-nav-h: 68px;
+
+  /* ---- Motion ---- */
+  --vt-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --vt-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}

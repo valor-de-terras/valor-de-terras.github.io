@@ -1,0 +1,425 @@
+.section {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(3.5rem, 7vw, var(--vt-space-9));
+  background:
+    radial-gradient(120% 130% at 8% -8%, var(--vt-green-100) 0%, transparent 42%),
+    var(--vt-paper);
+  scroll-margin-top: var(--vt-nav-h);
+}
+
+.malha {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--vt-green-700);
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+}
+
+/* ---- Cabeçalho ---- */
+.head {
+  max-width: 640px;
+}
+.title {
+  font-size: var(--vt-step-4);
+  margin-top: 1rem;
+  line-height: 1.04;
+}
+.accent {
+  color: var(--vt-green-700);
+  position: relative;
+  white-space: nowrap;
+}
+.accent::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.05em;
+  height: 0.32em;
+  background: var(--vt-ochre-300);
+  opacity: 0.5;
+  z-index: -1;
+  border-radius: 2px;
+}
+.lede {
+  margin-top: 1.2rem;
+  font-size: var(--vt-step-1);
+  color: var(--vt-ink-soft);
+  line-height: 1.55;
+  max-width: 58ch;
+}
+
+/* ---- Modos de entrada ---- */
+.modos {
+  margin-top: clamp(2.4rem, 5vw, 3.4rem);
+}
+.modosLabel {
+  display: block;
+  font-family: var(--vt-font-mono);
+  font-size: var(--vt-step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vt-ink-faint);
+  margin-bottom: 1rem;
+}
+.modosGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.modo {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius-lg);
+  padding: 1.3rem 1.3rem 1.4rem;
+  box-shadow: var(--vt-shadow-sm);
+  transition: transform 0.22s var(--vt-ease), box-shadow 0.22s var(--vt-ease),
+    border-color 0.22s var(--vt-ease);
+}
+.modo:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--vt-shadow);
+  border-color: var(--vt-line-strong);
+}
+.modoGlifo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--vt-radius);
+  background: var(--vt-green-100);
+  color: var(--vt-green-700);
+}
+.modoGlifo svg {
+  width: 22px;
+  height: 22px;
+}
+.modoNum {
+  position: absolute;
+  top: 1.3rem;
+  right: 1.3rem;
+  font-family: var(--vt-font-mono);
+  font-size: 0.82rem;
+  color: var(--vt-line-strong);
+  font-weight: 600;
+}
+.modoTitulo {
+  font-family: var(--vt-font-display);
+  font-size: 1.18rem;
+  margin-top: 0.95rem;
+  color: var(--vt-green-900);
+}
+.modoDesc {
+  margin-top: 0.5rem;
+  font-size: 0.92rem;
+  color: var(--vt-ink-soft);
+  line-height: 1.55;
+}
+
+/* ---- Duas vias ---- */
+.trilhos {
+  margin-top: clamp(2.6rem, 5vw, 3.6rem);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  gap: 1rem;
+}
+.trilho {
+  border-radius: var(--vt-radius-lg);
+  padding: 1.5rem 1.5rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+}
+.trilhoAuto {
+  background: var(--vt-paper-2);
+  border: 1px solid var(--vt-line);
+}
+.trilhoArt {
+  background: linear-gradient(180deg, var(--vt-green-900), var(--vt-green-950));
+  color: var(--vt-dark-ink);
+  border: 1px solid var(--vt-green-900);
+  box-shadow: var(--vt-shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+.trilhoArt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 92% 6%, rgba(210, 132, 58, 0.2), transparent 44%);
+  pointer-events: none;
+}
+.trilhoHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  position: relative;
+}
+.trilhoTag {
+  font-family: var(--vt-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 0.26rem 0.6rem;
+  border-radius: 999px;
+  background: var(--vt-green-700);
+  color: #fbfdf9;
+}
+.trilhoTagArt {
+  background: var(--vt-ochre-600);
+  color: #fff;
+}
+.trilhoSync,
+.trilhoAsync {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--vt-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+.trilhoSync {
+  color: var(--vt-green-700);
+}
+.trilhoAsync {
+  color: var(--vt-ochre-300);
+}
+.dot,
+.dotArt {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.dot {
+  background: var(--vt-green-500);
+  box-shadow: 0 0 0 0 rgba(44, 144, 105, 0.5);
+  animation: hiw-pulse 2s infinite;
+}
+.dotArt {
+  background: var(--vt-ochre-500);
+}
+@keyframes hiw-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(44, 144, 105, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(44, 144, 105, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(44, 144, 105, 0);
+  }
+}
+.trilhoTitulo {
+  font-family: var(--vt-font-display);
+  font-size: 1.42rem;
+  margin-top: 1rem;
+  position: relative;
+}
+.trilhoAuto .trilhoTitulo {
+  color: var(--vt-green-900);
+}
+.trilhoArt .trilhoTitulo {
+  color: #fff;
+}
+.trilhoDesc {
+  margin-top: 0.7rem;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  position: relative;
+}
+.trilhoAuto .trilhoDesc {
+  color: var(--vt-ink-soft);
+}
+.trilhoArt .trilhoDesc {
+  color: var(--vt-dark-ink-soft);
+}
+.trilhoMeta {
+  margin-top: auto;
+  padding-top: 1.2rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  position: relative;
+}
+.trilhoMeta li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.trilhoMeta span {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--vt-font-mono);
+}
+.trilhoMeta strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.trilhoAuto .trilhoMeta span {
+  color: var(--vt-ink-faint);
+}
+.trilhoAuto .trilhoMeta strong {
+  color: var(--vt-green-800);
+}
+.trilhoArt .trilhoMeta span {
+  color: var(--vt-green-300);
+}
+.trilhoArt .trilhoMeta strong {
+  color: #fff;
+}
+
+.bifurca {
+  align-self: center;
+  font-family: var(--vt-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--vt-ink-faint);
+  white-space: nowrap;
+  text-align: center;
+  padding: 0 0.2rem;
+}
+
+/* ---- Stepper ---- */
+.stepper {
+  margin-top: clamp(2.6rem, 5vw, 3.6rem);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.6rem 1.4rem;
+}
+.passo {
+  position: relative;
+  padding-left: 1.4rem;
+}
+.passo::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  bottom: -0.4rem;
+  width: 2px;
+  border-radius: 2px;
+}
+.passoAuto::before {
+  background: var(--vt-green-500);
+}
+.passoArt::before {
+  background: var(--vt-ochre-500);
+}
+.passoNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-family: var(--vt-font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  border: 1px solid var(--vt-line);
+  background: #fff;
+}
+.passoAuto .passoNum {
+  color: var(--vt-green-700);
+  border-color: var(--vt-green-300);
+}
+.passoArt .passoNum {
+  color: var(--vt-ochre-700);
+  border-color: var(--vt-ochre-300);
+  background: var(--vt-ochre-100);
+}
+.passoCorpo {
+  margin-top: 0.8rem;
+}
+.passoRotulo {
+  display: inline-block;
+  font-family: var(--vt-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.passoAuto .passoRotulo {
+  color: var(--vt-green-600);
+}
+.passoArt .passoRotulo {
+  color: var(--vt-ochre-600);
+}
+.passoTitulo {
+  font-family: var(--vt-font-display);
+  font-size: 1.2rem;
+  margin-top: 0.35rem;
+  color: var(--vt-ink);
+}
+.passoDesc {
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+  color: var(--vt-ink-soft);
+  line-height: 1.55;
+  max-width: 34ch;
+}
+
+/* ---- CTA ---- */
+.cta {
+  margin-top: clamp(2.4rem, 5vw, 3.2rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.4rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--vt-line);
+}
+.ctaNota {
+  font-size: 0.82rem;
+  color: var(--vt-ink-faint);
+  line-height: 1.5;
+  max-width: 46ch;
+}
+
+/* ---- Responsivo ---- */
+@media (max-width: 940px) {
+  .stepper {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .modosGrid {
+    grid-template-columns: 1fr;
+  }
+  .trilhos {
+    grid-template-columns: 1fr;
+  }
+  .bifurca {
+    transform: rotate(90deg);
+    padding: 0.4rem 0;
+  }
+  .trilhoMeta {
+    padding-top: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .stepper {
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+  }
+  .passoDesc {
+    max-width: none;
+  }
+  .cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

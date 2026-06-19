@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Valor de Terras">
+  <rect width="64" height="64" rx="14" fill="#0b2e23"/>
+  <g fill="none" stroke="#2c9069" stroke-width="2" stroke-linecap="round" opacity="0.55">
+    <path d="M6 40c8-3 14-3 22 0s16 3 30-2"/>
+    <path d="M6 48c8-3 14-3 22 0s16 3 30-2"/>
+    <path d="M6 32c8-3 14-3 22 0s16 3 30-2"/>
+  </g>
+  <path d="M32 14c-7 0-12.5 5.4-12.5 12.3C19.5 35 32 49 32 49s12.5-14 12.5-22.7C44.5 19.4 39 14 32 14z" fill="#d2843a"/>
+  <circle cx="32" cy="26.4" r="4.6" fill="#0b2e23"/>
+</svg>

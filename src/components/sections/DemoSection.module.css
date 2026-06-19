@@ -1,0 +1,81 @@
+.section {
+  padding-block: clamp(3.5rem, 7vw, 7rem);
+  background: linear-gradient(180deg, var(--vt-paper) 0%, var(--vt-paper-2) 100%);
+  border-top: 1px solid var(--vt-line);
+  border-bottom: 1px solid var(--vt-line);
+  scroll-margin-top: var(--vt-nav-h);
+}
+
+.head {
+  max-width: 640px;
+  margin-bottom: clamp(1.6rem, 3vw, 2.6rem);
+}
+
+.title {
+  font-size: var(--vt-step-3);
+  margin-top: 0.7rem;
+}
+
+.lede {
+  margin-top: 0.8rem;
+  font-size: var(--vt-step-1);
+  color: var(--vt-ink-soft);
+  line-height: 1.5;
+}
+
+/* ---- Skeleton enquanto a demo (MapLibre) carrega ---- */
+.skeleton {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  align-items: start;
+}
+@media (max-width: 880px) {
+  .skeleton {
+    grid-template-columns: 1fr;
+  }
+}
+.skelPanel {
+  height: 320px;
+  border-radius: var(--vt-radius-lg);
+  border: 1px solid var(--vt-line);
+  background: var(--vt-paper);
+  box-shadow: var(--vt-shadow-sm);
+}
+.skelStage {
+  min-width: 0;
+}
+.skelMap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  height: clamp(360px, 52vh, 520px);
+  border-radius: var(--vt-radius-lg);
+  border: 1px solid var(--vt-line);
+  background: var(--vt-paper-2);
+  box-shadow: var(--vt-shadow);
+}
+.skelText {
+  font-size: 0.86rem;
+  color: var(--vt-ink-faint);
+}
+.skelSpinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid var(--vt-line-strong);
+  border-top-color: var(--vt-green-600);
+  animation: vt-spin 0.9s linear infinite;
+}
+@keyframes vt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skelSpinner {
+    animation: none;
+  }
+}

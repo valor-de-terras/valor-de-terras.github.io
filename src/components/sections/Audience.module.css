@@ -1,0 +1,158 @@
+.section {
+  position: relative;
+  padding-block: clamp(3.5rem, 7vw, 7rem);
+  background:
+    radial-gradient(115% 90% at 12% 0%, var(--vt-green-100) 0%, transparent 38%),
+    var(--vt-paper);
+  scroll-margin-top: var(--vt-nav-h);
+}
+
+.head {
+  max-width: 660px;
+  margin-bottom: clamp(1.8rem, 3.5vw, 2.8rem);
+}
+
+.title {
+  font-size: var(--vt-step-3);
+  margin-top: 0.7rem;
+}
+
+.lede {
+  margin-top: 0.85rem;
+  font-size: var(--vt-step-1);
+  color: var(--vt-ink-soft);
+  line-height: 1.55;
+  max-width: 56ch;
+}
+
+/* ---- Grade de cartões: 3x2 desktop -> 1 col mobile ---- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.9rem, 1.8vw, 1.3rem);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.5rem 1.45rem 1.6rem;
+  background: #fff;
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius-lg);
+  box-shadow: var(--vt-shadow-sm);
+  overflow: hidden;
+  transition: transform 0.28s var(--vt-ease), box-shadow 0.28s var(--vt-ease),
+    border-color 0.28s var(--vt-ease);
+}
+
+/* malha de grade cartográfica sutil no canto */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--vt-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--vt-line) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(120% 90% at 100% 0%, #000 0%, transparent 52%);
+  mask-image: radial-gradient(120% 90% at 100% 0%, #000 0%, transparent 52%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* faixa ocre que aparece no topo ao passar o mouse */
+.card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--vt-green-600), var(--vt-ochre-500));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s var(--vt-ease);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--vt-shadow);
+  border-color: var(--vt-line-strong);
+}
+.card:hover::after {
+  transform: scaleX(1);
+}
+
+.glyph {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--vt-radius);
+  background: var(--vt-paper-2);
+  border: 1px solid var(--vt-line);
+  color: var(--vt-green-700);
+  transition: background 0.28s var(--vt-ease), color 0.28s var(--vt-ease),
+    border-color 0.28s var(--vt-ease);
+}
+.card:hover .glyph {
+  background: var(--vt-green-900);
+  border-color: var(--vt-green-900);
+  color: var(--vt-ochre-300);
+}
+
+.svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cardTitle {
+  position: relative;
+  margin-top: 0.35rem;
+  font-size: 1.06rem;
+  line-height: 1.2;
+  color: var(--vt-green-800);
+  letter-spacing: -0.01em;
+}
+
+.cardUse {
+  position: relative;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--vt-ink-soft);
+  max-width: 36ch;
+}
+
+.note {
+  margin-top: clamp(1.6rem, 3vw, 2.4rem);
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--vt-line);
+  font-size: 0.92rem;
+  color: var(--vt-ink-faint);
+  max-width: 60ch;
+}
+
+/* ---- Responsivo ---- */
+@media (max-width: 940px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: 1.3rem 1.25rem 1.4rem;
+  }
+}

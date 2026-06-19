@@ -1,0 +1,204 @@
+.section {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(3.5rem, 7vw, 6rem);
+  background:
+    radial-gradient(120% 90% at 10% 0%, var(--vt-paper-2) 0%, transparent 55%),
+    var(--vt-paper);
+  scroll-margin-top: var(--vt-nav-h);
+}
+
+/* malha de grade cartográfica, bem sutil no fundo */
+.section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--vt-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--vt-line) 1px, transparent 1px);
+  background-size: 72px 72px;
+  opacity: 0.32;
+  mask-image: radial-gradient(120% 80% at 50% 0%, #000 0%, transparent 78%);
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+}
+
+.head {
+  max-width: var(--vt-maxw-prose);
+}
+.title {
+  font-size: var(--vt-step-3);
+  margin-top: 0.9rem;
+}
+.lede {
+  margin-top: 1.1rem;
+  font-size: var(--vt-step-1);
+  color: var(--vt-ink-soft);
+  line-height: 1.55;
+  max-width: 56ch;
+}
+
+/* ---- Lista de acordeões ---- */
+.list {
+  margin-top: clamp(2rem, 4vw, 3rem);
+  max-width: var(--vt-maxw-prose);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.item {
+  background: #fff;
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius);
+  box-shadow: var(--vt-shadow-sm);
+  transition: border-color 0.2s var(--vt-ease), box-shadow 0.2s var(--vt-ease),
+    transform 0.2s var(--vt-ease);
+}
+.item:hover {
+  border-color: var(--vt-line-strong);
+}
+.itemOpen {
+  border-color: var(--vt-green-300);
+  box-shadow: var(--vt-shadow);
+}
+
+.itemHeading {
+  margin: 0;
+  font-family: var(--vt-font-body);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.trigger {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.05rem 1.2rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--vt-ink);
+  transition: color 0.16s var(--vt-ease);
+}
+.trigger:hover {
+  color: var(--vt-green-800);
+}
+
+.index {
+  flex: none;
+  font-family: var(--vt-font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--vt-ochre-600);
+  padding-top: 0.12rem;
+}
+
+.question {
+  flex: 1;
+  font-size: var(--vt-step-0);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--vt-line);
+  background: var(--vt-paper);
+  color: var(--vt-green-700);
+  transition: background 0.2s var(--vt-ease), border-color 0.2s var(--vt-ease),
+    color 0.2s var(--vt-ease);
+}
+.itemOpen .icon {
+  background: var(--vt-green-700);
+  border-color: var(--vt-green-700);
+  color: #fff;
+}
+.iconSvg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+/* a barra vertical some ao abrir, transformando o "+" num "-" */
+.iconBar {
+  transform-origin: center;
+  transition: transform 0.24s var(--vt-ease), opacity 0.24s var(--vt-ease);
+}
+.itemOpen .iconBar {
+  transform: scaleY(0);
+  opacity: 0;
+}
+
+.panel {
+  overflow: hidden;
+}
+.panel[hidden] {
+  display: none;
+}
+
+.answer {
+  padding: 0 1.2rem 1.25rem calc(1.2rem + 0.72rem + 0.9rem);
+  color: var(--vt-ink-soft);
+  font-size: var(--vt-step-0);
+  line-height: 1.6;
+  max-width: 62ch;
+  animation: faq-in 0.34s var(--vt-ease-out);
+}
+.answer p {
+  margin: 0;
+}
+
+@keyframes faq-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.note {
+  margin-top: 1.6rem;
+  max-width: var(--vt-maxw-prose);
+  font-family: var(--vt-font-mono);
+  font-size: var(--vt-step--1);
+  line-height: 1.55;
+  color: var(--vt-ink-faint);
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--vt-ochre-300);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .answer {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .trigger {
+    gap: 0.6rem;
+    padding: 0.95rem 1rem;
+  }
+  .index {
+    display: none;
+  }
+  .answer {
+    padding: 0 1rem 1.1rem 1rem;
+  }
+}
