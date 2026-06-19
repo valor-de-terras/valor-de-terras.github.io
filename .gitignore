@@ -10,3 +10,6 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+
+# notas internas de sessão (estratégia/preços) — não publicar
+notes/
