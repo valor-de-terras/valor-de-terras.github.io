@@ -7,6 +7,7 @@ import maplibregl, {
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { bbox } from "../../lib/geo";
+import { wmsTiles, ufForCenter } from "../../lib/sicar";
 import styles from "./MapView.module.css";
 
 type ParsedGeo = FeatureCollection | Feature<Geometry>;
@@ -20,10 +21,13 @@ interface Props {
   parcel: ParsedGeo | null;
   comparables?: CompMarker[];
   enableClick?: boolean;
+  carOverlay?: boolean;
   onMapClick?: (lng: number, lat: number) => void;
 }
 
 const PARANA_CENTER: [number, number] = [-51.5, -24.9];
+// Campos Gerais (Castro/PR): área agrícola com CAR denso, para "aterrissar" no modo CAR.
+const CAR_FOCUS: [number, number] = [-49.97, -24.84];
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
 
 const BASE_STYLE: StyleSpecification = {
@@ -48,12 +52,27 @@ const BASE_STYLE: StyleSpecification = {
       tileSize: 256,
       attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
     },
+    sicar: {
+      type: "raster",
+      tiles: [wmsTiles("pr")],
+      tileSize: 256,
+      attribution:
+        'Imóveis CAR © <a href="https://www.car.gov.br/">SICAR</a> / SFB',
+    },
     parcel: { type: "geojson", data: EMPTY },
     comparables: { type: "geojson", data: EMPTY },
   },
   layers: [
     { id: "carto", type: "raster", source: "carto", layout: { visibility: "visible" } },
     { id: "esri", type: "raster", source: "esri", layout: { visibility: "none" } },
+    {
+      id: "sicar",
+      type: "raster",
+      source: "sicar",
+      minzoom: 9,
+      layout: { visibility: "none" },
+      paint: { "raster-opacity": 0.7 },
+    },
     {
       id: "parcel-fill",
       type: "fill",
@@ -81,12 +100,19 @@ const BASE_STYLE: StyleSpecification = {
   ],
 };
 
-export default function MapView({ parcel, comparables, enableClick, onMapClick }: Props) {
+export default function MapView({
+  parcel,
+  comparables,
+  enableClick,
+  carOverlay,
+  onMapClick,
+}: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MlMap | null>(null);
   const readyRef = useRef(false);
   const clickCbRef = useRef(onMapClick);
   const enableRef = useRef(enableClick);
+  const ufRef = useRef("pr");
   const [basemap, setBasemap] = useState<"carto" | "esri">("carto");
 
   clickCbRef.current = onMapClick;
@@ -112,6 +138,16 @@ export default function MapView({ parcel, comparables, enableClick, onMapClick }
       if (enableRef.current && clickCbRef.current)
         clickCbRef.current(e.lngLat.lng, e.lngLat.lat);
     });
+    // troca a camada CAR conforme a UF do centro do mapa
+    map.on("moveend", () => {
+      const c = map.getCenter();
+      const uf = ufForCenter(c.lng, c.lat);
+      if (uf !== ufRef.current) {
+        ufRef.current = uf;
+        const src = map.getSource("sicar") as { setTiles?: (t: string[]) => void } | undefined;
+        src?.setTiles?.([wmsTiles(uf)]);
+      }
+    });
     mapRef.current = map;
     return () => {
       map.remove();
@@ -126,6 +162,21 @@ export default function MapView({ parcel, comparables, enableClick, onMapClick }
     if (!map) return;
     map.getCanvas().style.cursor = enableClick ? "crosshair" : "";
   }, [enableClick]);
+
+  // overlay CAR: mostra/esconde a camada do SICAR e aterrissa numa área com imóveis
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const apply = () => {
+      if (!map.getLayer("sicar")) return;
+      map.setLayoutProperty("sicar", "visibility", carOverlay ? "visible" : "none");
+      if (carOverlay && map.getZoom() < 9) {
+        map.easeTo({ center: CAR_FOCUS, zoom: 11.5, duration: 1200 });
+      }
+    };
+    if (readyRef.current) apply();
+    else map.once("load", apply);
+  }, [carOverlay]);
 
   // basemap toggle
   useEffect(() => {

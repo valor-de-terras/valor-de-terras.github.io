@@ -93,9 +93,11 @@ export default function EstimateCard({ result, comparables, area, onOpenReport }
       </div>
 
       <p className={styles.disclaimer}>
-        Simulação ilustrativa com dados sintéticos para demonstração do produto. Não
-        constitui laudo nem parecer técnico. O laudo formal exige enriquecimento com
-        fontes oficiais e responsabilidade técnica (ART) de profissional habilitado.
+        Estimativa preliminar calculada sobre a geometria informada (CAR real do SICAR ou
+        arquivo enviado). Os fatores de homogeneização e os comparáveis ainda são
+        ilustrativos nesta versão. Não constitui laudo nem parecer técnico: o laudo formal
+        exige enriquecimento com fontes oficiais e responsabilidade técnica (ART) de
+        profissional habilitado no CREA.
       </p>
     </section>
   );

@@ -69,9 +69,44 @@
   font-size: 0.86rem;
   color: var(--vt-ink-soft);
   line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 .hint strong {
   color: var(--vt-ink);
+}
+.carNote {
+  font-size: 0.76rem;
+  color: var(--vt-ink-faint);
+  border-left: 2px solid var(--vt-green-300);
+  padding-left: 0.6rem;
+}
+.carLoading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--vt-green-700);
+}
+.carSpin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--vt-green-100);
+  border-top-color: var(--vt-green-600);
+  animation: vt-carspin 0.8s linear infinite;
+}
+@keyframes vt-carspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carSpin {
+    animation: none;
+  }
 }
 
 .samples {

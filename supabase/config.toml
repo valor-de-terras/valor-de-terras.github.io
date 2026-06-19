@@ -1,0 +1,7 @@
+# Configuração do projeto Supabase — Valor de Terras
+# https://supabase.com/docs/guides/cli/config
+project_id = "valor-de-terras"
+
+[functions.appraise]
+enabled = true
+verify_jwt = true

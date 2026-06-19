@@ -4,7 +4,8 @@ import EnrichmentTimeline from "./EnrichmentTimeline";
 import EstimateCard from "./EstimateCard";
 import ReportPreview from "./ReportPreview";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
-import { areaHa, syntheticParcelAround } from "../../lib/geo";
+import { areaHa } from "../../lib/geo";
+import { fetchCarAtPoint, municipioBasePrice } from "../../lib/sicar";
 import {
   ENRICHMENT_LAYERS,
   SAMPLE_PARCELS,
@@ -15,7 +16,7 @@ import type { Comparable, EstimateResult } from "../../types";
 import { fmtArea } from "../../lib/format";
 import styles from "./MapDemo.module.css";
 
-type Mode = "sample" | "point" | "upload";
+type Mode = "sample" | "car" | "upload";
 type Status = "empty" | "ready" | "enriching" | "done";
 
 interface Meta {
@@ -43,8 +44,10 @@ export default function MapDemo() {
   const [error, setError] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [carLoading, setCarLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const timersRef = useRef<number[]>([]);
+  const carAbortRef = useRef<AbortController | null>(null);
 
   const clearTimers = () => {
     timersRef.current.forEach((t) => window.clearTimeout(t));
@@ -53,6 +56,9 @@ export default function MapDemo() {
 
   const reset = useCallback(() => {
     clearTimers();
+    carAbortRef.current?.abort();
+    carAbortRef.current = null;
+    setCarLoading(false);
     setParcel(null);
     setMeta(null);
     setStatus("empty");
@@ -82,21 +88,42 @@ export default function MapDemo() {
   };
 
   const onMapClick = useCallback(
-    (lng: number, lat: number) => {
-      if (mode !== "point") return;
-      const seed = Math.abs(Math.round((lng + lat) * 137)) % 97;
-      const f = syntheticParcelAround(lng, lat, seed + 1);
-      const code = `PR-${4100000 + (seed * 131) % 99999}-${seed
-        .toString(16)
-        .toUpperCase()
-        .padStart(2, "0")}F${(seed * 7) % 9}`;
-      adoptParcel(f, {
-        name: "Imóvel identificado sobre o ponto",
-        municipality: "Paraná (ponto)",
-        uf: "PR",
-        carCode: code,
-        basePricePerHa: 70000 + (seed % 11) * 1500,
-      });
+    async (lng: number, lat: number) => {
+      if (mode !== "car") return;
+      carAbortRef.current?.abort();
+      const ctrl = new AbortController();
+      carAbortRef.current = ctrl;
+      setError(null);
+      setCarLoading(true);
+      try {
+        const hit = await fetchCarAtPoint(lng, lat, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        if (!hit) {
+          setError(
+            "Nenhum imóvel CAR neste ponto. Aproxime o zoom e clique sobre um imóvel (polígono cinza)."
+          );
+          return;
+        }
+        adoptParcel(hit.feature, {
+          name:
+            hit.municipio && hit.municipio !== "—"
+              ? `Imóvel CAR em ${hit.municipio}`
+              : "Imóvel CAR selecionado",
+          municipality: hit.municipio,
+          uf: hit.uf,
+          carCode: hit.codImovel,
+          basePricePerHa: municipioBasePrice(hit.municipio, hit.uf),
+        });
+      } catch (e) {
+        if ((e as Error)?.name !== "AbortError") {
+          setError("Falha ao consultar o SICAR. Verifique a conexão e tente novamente.");
+        }
+      } finally {
+        if (carAbortRef.current === ctrl) {
+          setCarLoading(false);
+          carAbortRef.current = null;
+        }
+      }
     },
     [mode, adoptParcel]
   );
@@ -158,7 +185,7 @@ export default function MapDemo() {
       : [];
 
   return (
-    <div className={styles.shell} id="demo">
+    <div className={styles.shell}>
       <div className={styles.grid}>
         {/* Coluna esquerda: controles */}
         <div className={styles.panel}>
@@ -173,11 +200,11 @@ export default function MapDemo() {
             </button>
             <button
               role="tab"
-              aria-selected={mode === "point"}
-              className={mode === "point" ? styles.tabActive : styles.tab}
-              onClick={() => setMode("point")}
+              aria-selected={mode === "car"}
+              className={mode === "car" ? styles.tabActive : styles.tab}
+              onClick={() => setMode("car")}
             >
-              Clicar no mapa
+              Selecionar CAR
             </button>
             <button
               role="tab"
@@ -212,12 +239,23 @@ export default function MapDemo() {
               </div>
             )}
 
-            {mode === "point" && (
-              <p className={styles.hint}>
-                <strong>Clique em qualquer ponto do mapa.</strong> O sistema identifica o
-                CAR sobreposto e delimita o imóvel automaticamente. (Demonstração: a
-                geometria é sintetizada no navegador.)
-              </p>
+            {mode === "car" && (
+              <div className={styles.hint}>
+                <p>
+                  <strong>Clique sobre um imóvel no mapa.</strong> O sistema consulta o
+                  SICAR e seleciona o <strong>CAR real</strong> sobreposto ao ponto, com
+                  geometria e atributos oficiais (município, área, código do imóvel).
+                </p>
+                <p className={styles.carNote}>
+                  Aproxime o zoom até ver os imóveis (polígonos cinza) e clique em um deles.
+                  Fonte: SICAR / Serviço Florestal Brasileiro.
+                </p>
+                {carLoading && (
+                  <p className={styles.carLoading}>
+                    <span className={styles.carSpin} /> consultando o SICAR…
+                  </p>
+                )}
+              </div>
             )}
 
             {mode === "upload" && (
@@ -298,13 +336,16 @@ export default function MapDemo() {
             <MapView
               parcel={parcel}
               comparables={compMarkers}
-              enableClick={mode === "point"}
+              enableClick={mode === "car"}
+              carOverlay={mode === "car"}
               onMapClick={onMapClick}
             />
             {!parcel && (
               <div className={styles.mapHint}>
-                {mode === "point"
-                  ? "Clique no mapa para começar"
+                {mode === "car"
+                  ? carLoading
+                    ? "Consultando o SICAR…"
+                    : "Clique sobre um imóvel (CAR) no mapa"
                   : "Escolha um imóvel para visualizar"}
               </div>
             )}
