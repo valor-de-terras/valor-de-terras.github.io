@@ -13,8 +13,23 @@ import TechStack from "./components/sections/TechStack";
 import Roadmap from "./components/sections/Roadmap";
 import Faq from "./components/sections/Faq";
 import CtaBand from "./components/sections/CtaBand";
+import { lazy, Suspense } from "react";
+import { useHashRoute } from "./lib/router";
+
+// Portal do engenheiro carregado sob demanda (não pesa a landing com maplibre/supabase).
+const PortalApp = lazy(() => import("./portal/PortalApp"));
 
 export default function App() {
+  const hash = useHashRoute();
+  // Portal do engenheiro (rota discreta, protegida por login). GitHub Pages = hash routing.
+  if (hash.startsWith("#/portal")) {
+    return (
+      <Suspense fallback={<div style={{ padding: "3rem", textAlign: "center" }}>Carregando painel…</div>}>
+        <PortalApp />
+      </Suspense>
+    );
+  }
+
   return (
     <>
       <a href="#demo" className="vt-sr-only">

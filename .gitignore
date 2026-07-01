@@ -13,3 +13,7 @@ yarn-error.log*
 
 # notas internas de sessão (estratégia/preços) — não publicar
 notes/
+
+# caches locais (CLI Supabase, incremental do tsc)
+supabase/.temp/
+*.tsbuildinfo

@@ -31,3 +31,11 @@ double_confirm_changes = true
 [functions.appraise]
 enabled = true
 verify_jwt = true
+
+[functions.generate-report]
+enabled = true
+verify_jwt = true
+
+[functions.report-link]
+enabled = true
+verify_jwt = true
