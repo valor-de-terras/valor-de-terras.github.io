@@ -54,6 +54,8 @@
   font-weight: 600;
 }
 .linkBtn:hover { border-color: var(--vt-green-300); color: #fff; }
+.linkBtnOn { background: var(--vt-green-600); border-color: var(--vt-green-600); color: #fff; }
+.navTabs { display: flex; gap: 0.4rem; }
 
 .body {
   width: 100%;

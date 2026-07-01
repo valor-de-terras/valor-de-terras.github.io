@@ -39,3 +39,7 @@ verify_jwt = true
 [functions.report-link]
 enabled = true
 verify_jwt = true
+
+[functions.admin-create-technician]
+enabled = true
+verify_jwt = true
