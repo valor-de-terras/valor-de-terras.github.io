@@ -94,11 +94,18 @@ e não há SMTP configurado, crie as contas já confirmadas pelo Dashboard e pro
      set crea_active = true, active = true, crea_valid_until = current_date + interval '12 months';
    ```
 
-3. (Opcional) Para um fluxo de admin: promova um deles a `admin`
-   (`update public.profiles set role='admin' where email='...';`) e, a partir do app logado como
-   admin, use `admin_upsert_technician(...)` para os demais.
+3. **Promova um deles a `admin`** (uma vez, por SQL) para habilitar o painel de gestão:
+   `update public.profiles set role='admin' where email='avner@exemplo.com';`
 
-> A trava da ART exige `crea_valid_until >= current_date`. Renove a validade a cada anuidade do CREA.
+**Depois disso, sem SQL.** Logado como admin, o portal ganha a aba **"Equipe"**, onde se
+cadastra novos engenheiros (nome, e-mail, senha temporária, CREA, UF, validade), renova a
+validade do CREA e ativa/desativa. A criação da conta (já confirmada) roda na edge function
+`admin-create-technician` (service role, após checar `is_admin`); o engenheiro entra em
+`/#/portal` com a senha temporária e a troca em **"Trocar senha"**. Só o **primeiro admin**
+precisa do SQL acima.
+
+> A trava da ART exige `crea_valid_until >= current_date`. O painel renova a validade a cada
+> anuidade do CREA (botão "Renovar 12m").
 
 ## Deploy
 
