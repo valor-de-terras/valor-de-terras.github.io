@@ -198,3 +198,62 @@ export function geometryToFeature(g: Geometry | null): Feature<Geometry> | null 
   if (!g) return null;
   return { type: "Feature", properties: {}, geometry: g };
 }
+
+// ── admin: gestão da equipe técnica ──────────────────────────────────────────
+export interface TechnicianRow {
+  profile_id: string;
+  full_name: string | null;
+  email: string | null;
+  role: string;
+  crea_number: string | null;
+  uf: string | null;
+  specialty: string | null;
+  active: boolean;
+  crea_active: boolean;
+  crea_valid_until: string | null;
+}
+
+export interface NewTechnician {
+  name: string;
+  email: string;
+  password: string;
+  crea: string;
+  uf: string;
+  specialty?: string;
+  valid_months?: number;
+}
+
+export async function adminListTechnicians(): Promise<TechnicianRow[]> {
+  const { data, error } = await supabase.rpc("admin_list_technicians");
+  if (error) throw error;
+  return (data as TechnicianRow[]) ?? [];
+}
+
+export async function adminCreateTechnician(t: NewTechnician): Promise<{ created: boolean; email: string }> {
+  const { data, error } = await supabase.functions.invoke("admin-create-technician", {
+    body: {
+      name: t.name, email: t.email, password: t.password,
+      crea: t.crea, uf: t.uf, specialty: t.specialty ?? null,
+      valid_months: t.valid_months ?? 12,
+    },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return { created: !!data.created, email: data.email };
+}
+
+export async function adminSetValidity(profileId: string, months: number): Promise<void> {
+  const { error } = await supabase.rpc("admin_set_technician_validity", { p_profile_id: profileId, p_months: months });
+  if (error) throw error;
+}
+
+export async function adminSetActive(profileId: string, active: boolean): Promise<void> {
+  const { error } = await supabase.rpc("admin_set_technician_active", { p_profile_id: profileId, p_active: active });
+  if (error) throw error;
+}
+
+/** Troca a senha do usuário logado (útil para o engenheiro trocar a senha temporária). */
+export async function changePassword(newPassword: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
