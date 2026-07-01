@@ -3,6 +3,7 @@ import MapView from "./MapView";
 import EnrichmentTimeline from "./EnrichmentTimeline";
 import EstimateCard from "./EstimateCard";
 import ReportPreview from "./ReportPreview";
+import RequestReportModal from "./RequestReportModal";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
 import { areaHa } from "../../lib/geo";
 import { fetchCarAtPoint, municipioBasePrice } from "../../lib/sicar";
@@ -47,8 +48,10 @@ export default function MapDemo() {
   } | null>(null);
   const [liveLayers, setLiveLayers] = useState<EnrichmentLayer[]>(ENRICHMENT_LAYERS);
   const [backendUsed, setBackendUsed] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [reportRequestOpen, setReportRequestOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [carLoading, setCarLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -72,6 +75,7 @@ export default function MapDemo() {
     setResult(null);
     setLiveLayers(ENRICHMENT_LAYERS);
     setBackendUsed(false);
+    setRequestId(null);
     setError(null);
   }, []);
 
@@ -174,6 +178,7 @@ export default function MapDemo() {
     setActiveLayers(0);
     setLiveLayers(ENRICHMENT_LAYERS);
     setBackendUsed(false);
+    setRequestId(null);
     const N = ENRICHMENT_LAYERS.length;
     // animação de progresso enquanto o servidor consulta as fontes (deixa a última "ativa")
     for (let i = 0; i < N - 1; i++) {
@@ -207,6 +212,7 @@ export default function MapDemo() {
           layers: r.layers,
         });
         setBackendUsed(true);
+        setRequestId(r.requestId);
         setActiveLayers(N);
         setStatus("done");
       })
@@ -413,7 +419,9 @@ export default function MapDemo() {
               comparables={result.comparables}
               area={result.area}
               serverSide={backendUsed}
+              canRequestReport={backendUsed && !!requestId}
               onOpenReport={() => setReportOpen(true)}
+              onRequestReport={() => setReportRequestOpen(true)}
             />
           )}
         </div>
@@ -428,6 +436,16 @@ export default function MapDemo() {
           estimate={result.estimate}
           comparables={result.comparables}
           layers={result.layers}
+        />
+      )}
+
+      {reportRequestOpen && result && meta && (
+        <RequestReportModal
+          requestId={requestId}
+          municipality={meta.municipality}
+          uf={meta.uf}
+          area={result.area}
+          onClose={() => setReportRequestOpen(false)}
         />
       )}
     </div>

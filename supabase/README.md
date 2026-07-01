@@ -43,21 +43,62 @@ Chamáveis via `supabase.rpc(...)` com o JWT do usuário (RLS aplicada):
 | `proceed_to_technical_review(p_request_id)` | Cliente solicita o laudo formal com ART |
 | `cancel_request(p_request_id)` | Cancela o pedido |
 | `assign_technical_review(p_request_id)` | Engenheiro assume a revisão (somente equipe técnica) |
-| `submit_art_and_finish(p_request_id, p_art_number, p_narrative)` | Registra ART e finaliza o laudo |
+| `proceed_to_technical_review(p_request_id, p_contact_name, p_contact_email, p_contact_phone, p_purpose)` | Cliente solicita o laudo e deixa contato (consentimento LGPD) |
+| `save_technical_review(p_request_id, p_narrative, p_grade, p_final_price_per_ha, p_final_total, p_adjustments)` | Rascunho da revisão (só o engenheiro responsável; não muda o status) |
+| `submit_art_and_finish(p_request_id, p_art_number, p_narrative, p_art_pdf_path, p_grade, p_final_price_per_ha, p_final_total)` | Registra ART e move para `REPORT_GENERATING` (trava: mesmo engenheiro, CREA válido, ART obrigatória) |
+| `finalize_report_delivery(p_request_id, p_report_pdf_path)` | Grava o caminho do PDF e finaliza em `DELIVERED` (chamada pela edge function) |
+| `get_technician_queue()` | Fila do painel (só equipe técnica): pedidos em fila/revisão/gerando |
+| `get_request_bundle(p_request_id)` | Pacote completo do pedido (imóvel+geometria, estimativa, comparáveis, enriquecimento, laudo, auditoria) para painel/PDF/acompanhamento |
+| `get_my_requests()` | Pedidos do solicitante logado (para acompanhar status/laudo) |
+| `admin_upsert_technician(p_email, p_crea, p_uf, p_specialty, p_valid_months)` | Onboarding: promove um usuário existente a técnico (somente admin) |
 
 Toda escrita acontece dentro de funções `SECURITY DEFINER` auditadas; o cliente não tem
 `INSERT/UPDATE/DELETE` direto nas tabelas (apenas `SELECT` conforme RLS).
 
-### Edge Function
+### Edge Functions
 
-`POST /functions/v1/appraise` — orquestra `create_appraisal_request` + `run_preliminary_estimate`
-em uma chamada. Corpo: `{ geojson, purpose?, origin?, car_code?, municipality?, uf? }`.
-É o ponto onde, na evolução, entram os conectores reais de dados abertos antes do motor NBR.
+| Função | Descrição |
+|--------|-----------|
+| `POST /functions/v1/appraise` | Orquestra `create_appraisal_request` + `run_estimate_with_enrichment` (conectores reais de dados abertos + motor NBR) em uma chamada. Corpo: `{ geojson, purpose?, origin?, car_code?, municipality?, uf? }` |
+| `POST /functions/v1/generate-report` | Gera o PDF do laudo NBR 14.653-3 (pdf-lib) com o JWT do engenheiro responsável, grava no bucket privado `report-pdfs` e finaliza o pedido. Corpo: `{ request_id }` |
+| `POST /functions/v1/report-link` | Devolve URL assinada (1h) do PDF; verifica o escopo pelo JWT antes de assinar via service role. Corpo: `{ request_id }` |
 
 ## Storage
 
 Buckets privados: `geometries`, `art-pdfs`, `report-pdfs`. Acesso por dono do objeto;
 equipe técnica lê os buckets de laudo/ART.
+
+## Painel do engenheiro e onboarding da equipe técnica
+
+O painel fica em `/#/portal` (rota discreta, protegida por login, não linkada na landing).
+Engenheiros entram com **e-mail + senha** (contas pré-criadas por um admin — não há
+autocadastro público). O cliente continua usando **login anônimo** para a estimativa.
+
+**Bootstrap (uma vez, pelo dono do projeto).** Como `[auth.email] enable_confirmations = true`
+e não há SMTP configurado, crie as contas já confirmadas pelo Dashboard e promova por SQL:
+
+1. **Supabase Dashboard → Authentication → Users → Add user**: informe e-mail + senha e marque
+   **Auto Confirm User**. Repita para cada engenheiro (ex.: Avner, sócio).
+2. **SQL Editor**, uma vez, para cada engenheiro (bootstrap direto, pois `admin_upsert_technician`
+   exige um admin já existente):
+
+   ```sql
+   -- promove o perfil a técnico
+   update public.profiles set role = 'technician' where email = 'engenheiro@exemplo.com';
+   -- registra o responsável técnico com CREA válido (validade anual)
+   insert into public.technical_team_members
+     (profile_id, crea_number, uf, specialty, active, crea_active, crea_valid_until)
+   values ((select id from public.profiles where email = 'engenheiro@exemplo.com'),
+           'PR-12345/D', 'PR', 'Eng. Florestal', true, true, current_date + interval '12 months')
+   on conflict (profile_id) do update
+     set crea_active = true, active = true, crea_valid_until = current_date + interval '12 months';
+   ```
+
+3. (Opcional) Para um fluxo de admin: promova um deles a `admin`
+   (`update public.profiles set role='admin' where email='...';`) e, a partir do app logado como
+   admin, use `admin_upsert_technician(...)` para os demais.
+
+> A trava da ART exige `crea_valid_until >= current_date`. Renove a validade a cada anuidade do CREA.
 
 ## Deploy
 
@@ -66,6 +107,8 @@ npx supabase login                 # uma vez (abre o navegador)
 npx supabase link --project-ref <REF> -p <DB_PASSWORD>
 npx supabase db push               # aplica as migrations
 npx supabase functions deploy appraise
+npx supabase functions deploy generate-report
+npx supabase functions deploy report-link
 ```
 
 ## Conectar o front-end
@@ -83,6 +126,7 @@ const { data: reqId } = await supabase.rpc("create_appraisal_request", { p_geojs
 const { data: est } = await supabase.rpc("run_preliminary_estimate", { p_request_id: reqId });
 ```
 
-> Os dados de enriquecimento e comparáveis ainda são sintéticos (stub), marcados como tais
-> em `data_snapshots.payload.stub = true`. O laudo formal exige ART de profissional
-> habilitado no CREA.
+> O enriquecimento usa conectores **reais** de dados abertos (relevo/Copernicus, clima/ERA5,
+> uso/MapBiomas, solo/EMBRAPA, acesso+hidro/OSM, comparáveis/DERAL-SEAB-PR); IBAMA entra
+> quando o geoserver volta. O laudo formal exige ART de profissional habilitado no CREA e é
+> gerado em PDF no servidor (`generate-report`).

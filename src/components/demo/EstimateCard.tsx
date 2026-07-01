@@ -8,7 +8,9 @@ interface Props {
   comparables: Comparable[];
   area: number;
   serverSide?: boolean;
+  canRequestReport?: boolean;
   onOpenReport: () => void;
+  onRequestReport: () => void;
 }
 
 export default function EstimateCard({
@@ -16,7 +18,9 @@ export default function EstimateCard({
   comparables,
   area,
   serverSide,
+  canRequestReport,
   onOpenReport,
+  onRequestReport,
 }: Props) {
   const [showComps, setShowComps] = useState(false);
 
@@ -103,8 +107,13 @@ export default function EstimateCard({
         <button className="vt-btn vt-btn-accent" onClick={onOpenReport}>
           Ver prévia do laudo (NBR 14.653)
         </button>
-        <button className="vt-btn vt-btn-ghost" onClick={onOpenReport}>
-          Prosseguir para laudo com ART
+        <button
+          className="vt-btn vt-btn-primary"
+          onClick={onRequestReport}
+          disabled={!canRequestReport}
+          title={canRequestReport ? undefined : "Rode a estimativa no servidor para solicitar o laudo formal"}
+        >
+          Solicitar laudo com ART
         </button>
       </div>
 
