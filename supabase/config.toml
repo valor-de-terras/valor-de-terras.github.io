@@ -43,3 +43,7 @@ verify_jwt = true
 [functions.admin-create-technician]
 enabled = true
 verify_jwt = true
+
+[functions.admin-reset-password]
+enabled = true
+verify_jwt = true

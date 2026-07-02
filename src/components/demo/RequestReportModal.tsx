@@ -116,7 +116,13 @@ export default function RequestReportModal({ requestId, municipality, uf, area, 
 
               <label className={styles.consent}>
                 <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                <span>Concordo que meus dados sejam usados para contato sobre este pedido de laudo.</span>
+                <span>
+                  Concordo que meus dados sejam usados para contato sobre este pedido de laudo,
+                  conforme a{" "}
+                  <a href="#/privacidade" target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>
+                    Política de Privacidade
+                  </a>.
+                </span>
               </label>
 
               {err && <div className={styles.err}>{err}</div>}

@@ -129,6 +129,13 @@
 }
 .authNote { font-size: var(--vt-step--1); color: var(--vt-ink-faint); margin-top: 1rem; line-height: 1.5; }
 .wFull { width: 100%; }
+.linkText {
+  background: transparent; border: none; padding: 0; cursor: pointer;
+  color: var(--vt-green-800); font-weight: 600; font-size: var(--vt-step--1); text-decoration: underline;
+}
+.linkText:hover { color: var(--vt-green-600); }
+.forgotBox { border-top: 1px solid var(--vt-line); padding-top: 0.9rem; }
+.forgotHint { font-size: var(--vt-step--1); color: var(--vt-ink-faint); margin-bottom: 0.6rem; }
 
 /* ---- queue ---- */
 .head {

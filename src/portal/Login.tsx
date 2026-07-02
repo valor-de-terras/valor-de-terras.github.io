@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signInTech, signOut, type SessionUser } from "../lib/portal";
+import { signInTech, signOut, sendPasswordReset, type SessionUser } from "../lib/portal";
 import styles from "./portal.module.css";
 
 interface Props {
@@ -13,6 +13,9 @@ export default function Login({ loggedNonTech, onSignedIn }: Props) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [forgot, setForgot] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +28,21 @@ export default function Login({ loggedNonTech, onSignedIn }: Props) {
       setErr(e instanceof Error ? e.message : "Falha no login.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const sendReset = async () => {
+    setErr(null);
+    setResetMsg(null);
+    if (!email.includes("@")) { setErr("Informe seu e-mail para recuperar a senha."); return; }
+    setResetBusy(true);
+    try {
+      await sendPasswordReset(email);
+      setResetMsg("Se houver uma conta com este e-mail, enviamos um link para redefinir a senha. Se o e-mail não chegar, peça a um administrador para redefinir no painel (Equipe).");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Falha ao enviar o link de recuperação.");
+    } finally {
+      setResetBusy(false);
     }
   };
 
@@ -86,6 +104,26 @@ export default function Login({ loggedNonTech, onSignedIn }: Props) {
             {busy ? "Entrando…" : "Entrar"}
           </button>
         </form>
+
+        <div style={{ marginTop: "0.9rem" }}>
+          {!forgot ? (
+            <button type="button" className={styles.linkText} onClick={() => { setForgot(true); setResetMsg(null); }}>
+              Esqueci minha senha
+            </button>
+          ) : (
+            <div className={styles.forgotBox}>
+              <p className={styles.forgotHint}>
+                Enviaremos um link de recuperação para o e-mail acima.
+              </p>
+              <div className={styles.field}>
+                <button type="button" className={`vt-btn vt-btn-ghost ${styles.wFull}`} onClick={() => void sendReset()} disabled={resetBusy}>
+                  {resetBusy ? "Enviando…" : "Enviar link de recuperação"}
+                </button>
+              </div>
+              {resetMsg && <div className={styles.okMsg}>{resetMsg}</div>}
+            </div>
+          )}
+        </div>
 
         <p className={styles.authNote}>
           O cadastro de novos engenheiros é feito por um administrador. As contas exigem CREA

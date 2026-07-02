@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   adminListTechnicians, adminCreateTechnician, adminSetValidity, adminSetActive,
-  type TechnicianRow,
+  adminResetPassword, type TechnicianRow,
 } from "../lib/portal";
 import styles from "./portal.module.css";
 
@@ -59,6 +59,11 @@ export default function AdminTeam() {
 
   const onRenew = (id: string) => run(async () => { await adminSetValidity(id, 12); await load(); }, "Validade do CREA renovada por 12 meses.");
   const onToggle = (id: string, active: boolean) => run(async () => { await adminSetActive(id, !active); await load(); });
+  const onReset = (id: string, name: string | null) => run(async () => {
+    const temp = genPassword();
+    await adminResetPassword(id, temp);
+    setMsg(`Senha de ${name ?? "engenheiro"} redefinida. Nova senha temporária: ${temp} (compartilhe com segurança; peça a troca no primeiro acesso).`);
+  });
 
   return (
     <div>
@@ -166,8 +171,9 @@ export default function AdminTeam() {
                       </span>
                     </td>
                     <td className={styles.num}>
-                      <div className={styles.fileRow} style={{ justifyContent: "flex-end" }}>
+                      <div className={styles.fileRow} style={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
                         <button className="vt-btn vt-btn-ghost" onClick={() => onRenew(t.profile_id)} disabled={busy}>Renovar 12m</button>
+                        <button className="vt-btn vt-btn-ghost" onClick={() => onReset(t.profile_id, t.full_name)} disabled={busy}>Resetar senha</button>
                         <button className="vt-btn vt-btn-ghost" onClick={() => onToggle(t.profile_id, t.active)} disabled={busy}>
                           {t.active ? "Desativar" : "Ativar"}
                         </button>

@@ -2,7 +2,9 @@ import { createClient, type Session } from "@supabase/supabase-js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  // detectSessionInUrl: true para processar o link de recuperação de senha (evento
+  // PASSWORD_RECOVERY) quando o usuário volta do e-mail de "esqueci minha senha".
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
 
 /** Garante uma sessão (login anônimo) para o fluxo "testar sem cadastro". */
