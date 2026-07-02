@@ -106,10 +106,23 @@ export async function proceedToReview(requestId: string, c: ContactInput): Promi
   if (error) throw error;
 }
 
-export async function getMyRequests(): Promise<QueueItem[]> {
+export interface MyRequestItem {
+  request_id: string;
+  status: AppraisalStatusFull;
+  created_at: string;
+  municipality: string | null;
+  uf: string | null;
+  area_ha: number;
+  total_avg: number | null;
+  has_report: boolean;
+  grade: string | null;
+  art_number: string | null;
+}
+
+export async function getMyRequests(): Promise<MyRequestItem[]> {
   const { data, error } = await supabase.rpc("get_my_requests");
   if (error) throw error;
-  return (data as QueueItem[]) ?? [];
+  return (data as MyRequestItem[]) ?? [];
 }
 
 // ── engenheiro ───────────────────────────────────────────────────────────────

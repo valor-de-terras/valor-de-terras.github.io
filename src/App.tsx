@@ -13,22 +13,31 @@ import TechStack from "./components/sections/TechStack";
 import Roadmap from "./components/sections/Roadmap";
 import Faq from "./components/sections/Faq";
 import CtaBand from "./components/sections/CtaBand";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { useHashRoute } from "./lib/router";
+import ErrorBoundary from "./components/ErrorBoundary";
 
-// Portal do engenheiro carregado sob demanda (não pesa a landing com maplibre/supabase).
+// Rotas carregadas sob demanda (não pesam a landing com maplibre/supabase).
 const PortalApp = lazy(() => import("./portal/PortalApp"));
+const MyRequests = lazy(() => import("./tracking/MyRequests"));
+
+function RouteShell({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<div style={{ padding: "3rem", textAlign: "center" }}>Carregando {label}…</div>}>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
 
 export default function App() {
   const hash = useHashRoute();
-  // Portal do engenheiro (rota discreta, protegida por login). GitHub Pages = hash routing.
-  if (hash.startsWith("#/portal")) {
-    return (
-      <Suspense fallback={<div style={{ padding: "3rem", textAlign: "center" }}>Carregando painel…</div>}>
-        <PortalApp />
-      </Suspense>
-    );
-  }
+  // aceita "#portal" e "#/portal" (e idem para pedidos); âncoras de seção (#demo, #precos) caem na landing.
+  const seg = hash.replace(/^#\/?/, "").split(/[/?]/)[0];
+
+  if (seg === "portal") return <RouteShell label="painel"><PortalApp /></RouteShell>;
+  if (seg === "pedidos") return <RouteShell label="seus pedidos"><MyRequests /></RouteShell>;
 
   return (
     <>
