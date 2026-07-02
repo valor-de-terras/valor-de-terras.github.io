@@ -75,8 +75,12 @@ export default function RequestReportModal({ requestId, municipality, uf, area, 
             <p className={styles.finePrint}>
               Guardamos seu contato apenas para tratar deste pedido. Retornaremos por e-mail ou
               telefone com o laudo e a cobrança (a partir de R$ 2.500, conforme complexidade).
+              Você também pode acompanhar o status e baixar o laudo em{" "}
+              <a href="#/pedidos" style={{ textDecoration: "underline" }}>Meus pedidos</a>.
             </p>
-            <button className={`vt-btn vt-btn-primary ${styles.wFull}`} onClick={onClose}>Fechar</button>
+            <a className={`vt-btn vt-btn-primary ${styles.wFull}`} href="#/pedidos" onClick={onClose}>
+              Acompanhar meus pedidos
+            </a>
           </div>
         ) : (
           <>
