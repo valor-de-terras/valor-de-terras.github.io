@@ -107,6 +107,18 @@ precisa do SQL acima.
 > A trava da ART exige `crea_valid_until >= current_date`. O painel renova a validade a cada
 > anuidade do CREA (botão "Renovar 12m").
 
+### Recuperação de senha
+
+- **Reset pelo admin (funciona sem SMTP):** na aba "Equipe", botão **"Resetar senha"** define uma
+  nova senha temporária para o engenheiro (edge function `admin-reset-password`, `is_admin` +
+  service role). O engenheiro entra e troca em "Trocar senha".
+- **Self-service ("Esqueci minha senha" no login):** envia um link de recuperação por e-mail
+  (`resetPasswordForEmail` → tela "Definir nova senha"). A **entrega depende do e-mail do Supabase**:
+  o serviço embutido tende a entregar para o e-mail do dono da organização; para todos os
+  engenheiros, configure **SMTP próprio** (Auth → SMTP). Sem SMTP, use o reset pelo admin.
+- **Redundância recomendada:** promova um segundo `admin` (ex.: o sócio) para que os admins
+  possam redefinir a senha um do outro caso alguém fique sem acesso.
+
 ## Deploy
 
 ```bash
