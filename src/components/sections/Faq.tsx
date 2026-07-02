@@ -48,7 +48,9 @@ const ITEMS: QA[] = [
     q: "Funciona para imóvel urbano?",
     a: (
       <p>
-        O foco inicial é rural (NBR 14.653-3). O urbano (14.653-2) está no roadmap.
+        A plataforma é dedicada a imóveis rurais (NBR 14.653-3), atribuição privativa de
+        Engenheiro Agrônomo ou Florestal. A avaliação de imóveis urbanos (14.653-2) segue
+        outra atribuição e método, fora do escopo da plataforma.
       </p>
     ),
   },
@@ -57,8 +59,9 @@ const ITEMS: QA[] = [
     q: "Qual a cobertura geográfica?",
     a: (
       <p>
-        O MVP foca no Paraná, aproveitando a rede no IDR-PR, DERAL e SEAB, com expansão
-        planejada para o restante do Brasil.
+        A cobertura atual é o Paraná, com comparáveis do DERAL/SEAB-PR e a rede do IDR-PR.
+        O enriquecimento (relevo, solo, uso, clima, acesso) usa fontes nacionais e cobre
+        todo o Brasil; demais estados sob consulta.
       </p>
     ),
   },
@@ -143,8 +146,8 @@ export default function Faq() {
         </div>
 
         <p className={styles.note}>
-          Escopo, cobertura e preços citados são preliminares e referentes ao MVP; podem
-          mudar conforme a evolução da plataforma.
+          Os valores são de referência e podem variar conforme a região, o tipo de imóvel e a
+          complexidade da avaliação.
         </p>
       </div>
     </section>

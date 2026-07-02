@@ -58,7 +58,7 @@ export default function ReportPreview({
 
         <div className={styles.scroll}>
           <article className={styles.doc}>
-            <div className={styles.watermark}>PRÉVIA · SIMULAÇÃO</div>
+            <div className={styles.watermark}>PRÉVIA DO LAUDO</div>
 
             {/* Capa */}
             <div className={styles.cover}>

@@ -91,13 +91,13 @@ export default function Pricing() {
       <Grid />
       <div className="vt-container vt-container-wide">
         <div ref={headRef} className={`vt-reveal ${styles.head}`}>
-          <span className="vt-eyebrow">Modelo de negócio · valores preliminares</span>
+          <span className="vt-eyebrow">Preços · comece de graça</span>
           <h2 id="precos-title" className={styles.title}>
             Preços que acompanham o uso
           </h2>
           <p className={styles.lede}>
-            Comece de graça e pague apenas quando precisar de um laudo formal. Os valores
-            abaixo são preliminares e podem mudar conforme a região e o tipo de imóvel.
+            Comece de graça e pague apenas quando precisar de um laudo formal. O valor do laudo
+            varia conforme a região, o tipo de imóvel e a complexidade da avaliação.
           </p>
         </div>
 
@@ -111,8 +111,8 @@ export default function Pricing() {
           <span className={styles.noteMark} aria-hidden="true">
             ◆
           </span>
-          A estimativa preliminar pode ser gratuita. O pagamento ocorre apenas na emissão do
-          laudo formal, sem surpresas no caminho.
+          A estimativa preliminar é gratuita. O pagamento ocorre apenas na emissão do laudo
+          formal, sem surpresas no caminho.
         </p>
       </div>
     </section>

@@ -274,7 +274,7 @@ export default function MapDemo() {
             {mode === "sample" && (
               <div className={styles.samples}>
                 <p className={styles.hint}>
-                  Selecione um imóvel de exemplo no Paraná para simular a avaliação.
+                  Selecione um imóvel de exemplo no Paraná para ver a avaliação.
                 </p>
                 {SAMPLE_PARCELS.map((s) => (
                   <button

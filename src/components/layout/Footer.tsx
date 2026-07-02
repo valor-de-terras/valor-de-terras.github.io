@@ -35,13 +35,11 @@ export default function Footer() {
           <a href="https://www.gov.br/agricultura/" target="_blank" rel="noopener noreferrer">EMBRAPA</a>
         </nav>
 
-        <nav className={styles.col} aria-label="Projeto">
-          <h4>Projeto</h4>
-          <a href="https://github.com/valor-de-terras" target="_blank" rel="noopener noreferrer">
-            GitHub
-          </a>
+        <nav className={styles.col} aria-label="Institucional">
+          <h4>Institucional</h4>
           <a href="#publico">Para quem</a>
           <a href="#faq">Dúvidas</a>
+          <a href="#/privacidade">Privacidade e Termos</a>
         </nav>
       </div>
 
@@ -51,8 +49,8 @@ export default function Footer() {
           <a href="#/privacidade">Privacidade e Termos</a>
         </span>
         <span className={styles.legal}>
-          Plataforma de produção assistida. O laudo formal exige responsabilidade técnica (ART)
-          de profissional habilitado junto ao CREA.
+          Avaliação de imóveis rurais fundamentada na ABNT NBR 14.653 e em dados abertos. O laudo
+          formal exige responsabilidade técnica (ART) de profissional habilitado junto ao CREA.
         </span>
       </div>
     </footer>

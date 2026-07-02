@@ -9,8 +9,6 @@ import DemoSection from "./components/sections/DemoSection";
 import DataSources from "./components/sections/DataSources";
 import Audience from "./components/sections/Audience";
 import Pricing from "./components/sections/Pricing";
-import TechStack from "./components/sections/TechStack";
-import Roadmap from "./components/sections/Roadmap";
 import Faq from "./components/sections/Faq";
 import CtaBand from "./components/sections/CtaBand";
 import { lazy, Suspense, useState, type ReactNode } from "react";
@@ -69,8 +67,6 @@ export default function App() {
         <DataSources />
         <Audience />
         <Pricing />
-        <TechStack />
-        <Roadmap />
         <Faq />
         <CtaBand />
       </main>
