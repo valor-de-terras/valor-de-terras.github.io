@@ -149,7 +149,16 @@ export default function MapView({
       }
     });
     mapRef.current = map;
+    // Em mount lazy/Suspense (ex.: rota #/avaliar) o mapa pode ser criado antes do
+    // container ter o tamanho final, e o MapLibre não pede os tiles até um resize.
+    // ResizeObserver + resize no próximo frame garantem que os tiles pintem.
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => map.resize()) : null;
+    if (ro && containerRef.current) ro.observe(containerRef.current);
+    const raf = requestAnimationFrame(() => map.resize());
     return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
       map.remove();
       mapRef.current = null;
       readyRef.current = false;
