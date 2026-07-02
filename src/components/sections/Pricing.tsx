@@ -29,7 +29,7 @@ const PLANS: Plan[] = [
       "Dados abertos reais (relevo, solo, uso, clima)",
       "Sem cartão de crédito",
     ],
-    cta: { label: "Testar a demo", href: "#demo", variant: "vt-btn-ghost" },
+    cta: { label: "Avaliar grátis", href: "#/avaliar", variant: "vt-btn-ghost" },
   },
   {
     id: "laudo",
@@ -45,7 +45,7 @@ const PLANS: Plan[] = [
       "Enriquecimento com fontes oficiais",
       "Entregue em horas, não em semanas",
     ],
-    cta: { label: "Solicitar laudo", href: "#demo", variant: "vt-btn-primary" },
+    cta: { label: "Solicitar laudo", href: "#/avaliar", variant: "vt-btn-primary" },
     featured: true,
   },
   {

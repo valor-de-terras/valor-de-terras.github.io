@@ -210,8 +210,8 @@ export default function HowItWorks() {
         </ol>
 
         <div className={styles.cta}>
-          <a href="#demo" className="vt-btn vt-btn-primary">
-            Testar a demo →
+          <a href="#/avaliar" className="vt-btn vt-btn-primary">
+            Avalie sua propriedade →
           </a>
           <p className={styles.ctaNota}>
             Escopo e prazos do laudo formal são preliminares e confirmados na análise técnica

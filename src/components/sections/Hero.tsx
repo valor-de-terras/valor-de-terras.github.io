@@ -18,8 +18,8 @@ export default function Hero() {
             ABNT NBR 14.653. Da geometria do imóvel à estimativa, sem semanas de trabalho manual.
           </p>
           <div className={styles.actions}>
-            <a href="#demo" className="vt-btn vt-btn-primary">
-              Testar a demo interativa →
+            <a href="#/avaliar" className="vt-btn vt-btn-primary">
+              Avalie sua propriedade →
             </a>
             <a href="#como-funciona" className="vt-btn vt-btn-ghost">
               Como funciona

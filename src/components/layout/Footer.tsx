@@ -23,7 +23,7 @@ export default function Footer() {
           <h4>Produto</h4>
           <a href="#produto">Visão geral</a>
           <a href="#como-funciona">Como funciona</a>
-          <a href="#demo">Demo interativa</a>
+          <a href="#/avaliar">Avaliar propriedade</a>
           <a href="#precos">Preços</a>
         </nav>
 

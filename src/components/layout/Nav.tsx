@@ -38,8 +38,8 @@ export default function Nav() {
         </nav>
 
         <div className={styles.actions}>
-          <a href="#demo" className={`vt-btn vt-btn-primary ${styles.cta}`}>
-            Testar a demo
+          <a href="#/avaliar" className={`vt-btn vt-btn-primary ${styles.cta}`}>
+            Avalie sua propriedade
           </a>
         </div>
 
@@ -62,8 +62,8 @@ export default function Nav() {
               {l.label}
             </a>
           ))}
-          <a href="#demo" onClick={() => setOpen(false)} className="vt-btn vt-btn-primary">
-            Testar a demo
+          <a href="#/avaliar" onClick={() => setOpen(false)} className="vt-btn vt-btn-primary">
+            Avalie sua propriedade
           </a>
         </div>
       )}

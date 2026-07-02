@@ -54,7 +54,7 @@ export default function MyRequests() {
       <header className={styles.topbar}>
         <span className={styles.brand}>Valor de Terras</span>
         <div className={styles.spacer} />
-        <a className={styles.linkBtn} href="#demo">Nova avaliação</a>
+        <a className={styles.linkBtn} href="#/avaliar">Nova avaliação</a>
         <a className={styles.linkBtn} href="#/">Voltar ao site</a>
       </header>
 
@@ -68,8 +68,8 @@ export default function MyRequests() {
 
         {rows && rows.length === 0 && !err && (
           <div className={styles.empty}>
-            Você ainda não tem pedidos neste navegador. Faça uma avaliação na{" "}
-            <a href="#demo" style={{ textDecoration: "underline" }}>demonstração</a> para começar.
+            Você ainda não tem pedidos neste navegador.{" "}
+            <a href="#/avaliar" style={{ textDecoration: "underline" }}>Avalie sua propriedade</a> para começar.
           </div>
         )}
 

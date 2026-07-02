@@ -16,13 +16,12 @@ export default function CtaBand() {
             Avalie um imóvel <span className={styles.accent}>agora</span>.
           </h2>
           <p className={styles.lede}>
-            Experimente a estimativa preliminar do valor de uma propriedade rural na
-            própria página, em poucos passos. Nada para instalar, nada para preencher
-            antes de ver o resultado.
+            Obtenha a estimativa preliminar do valor de uma propriedade rural em poucos
+            passos. Nada para instalar, nada para preencher antes de ver o resultado.
           </p>
           <div className={styles.actions}>
-            <a href="#demo" className={`vt-btn ${styles.primary}`}>
-              Testar a demo
+            <a href="#/avaliar" className={`vt-btn ${styles.primary}`}>
+              Avalie sua propriedade
               <span className={styles.arrow} aria-hidden="true">
                 →
               </span>

@@ -6,76 +6,59 @@
   scroll-margin-top: var(--vt-nav-h);
 }
 
-.head {
-  max-width: 640px;
-  margin-bottom: clamp(1.6rem, 3vw, 2.6rem);
+.card {
+  max-width: 720px;
+  margin-inline: auto;
+  text-align: center;
+  background: var(--vt-paper);
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius-lg);
+  box-shadow: var(--vt-shadow);
+  padding: clamp(2rem, 5vw, 3.4rem) clamp(1.4rem, 4vw, 3rem);
+  position: relative;
+  overflow: hidden;
 }
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--vt-green-700), var(--vt-ochre-500));
+}
+.card :global(.vt-eyebrow) { justify-content: center; }
 
 .title {
-  font-size: var(--vt-step-3);
+  font-size: var(--vt-step-4, 2.6rem);
   margin-top: 0.7rem;
+  letter-spacing: -0.02em;
 }
-
 .lede {
-  margin-top: 0.8rem;
+  margin: 0.9rem auto 0;
+  max-width: 52ch;
   font-size: var(--vt-step-1);
   color: var(--vt-ink-soft);
-  line-height: 1.5;
+  line-height: 1.55;
 }
-
-/* ---- Skeleton enquanto a demo (MapLibre) carrega ---- */
-.skeleton {
-  display: grid;
-  grid-template-columns: minmax(280px, 360px) 1fr;
-  gap: clamp(1rem, 2.5vw, 2rem);
-  align-items: start;
-}
-@media (max-width: 880px) {
-  .skeleton {
-    grid-template-columns: 1fr;
-  }
-}
-.skelPanel {
-  height: 320px;
-  border-radius: var(--vt-radius-lg);
-  border: 1px solid var(--vt-line);
-  background: var(--vt-paper);
-  box-shadow: var(--vt-shadow-sm);
-}
-.skelStage {
-  min-width: 0;
-}
-.skelMap {
+.ctaRow {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
   justify-content: center;
-  gap: 0.9rem;
-  height: clamp(360px, 52vh, 520px);
-  border-radius: var(--vt-radius-lg);
-  border: 1px solid var(--vt-line);
-  background: var(--vt-paper-2);
-  box-shadow: var(--vt-shadow);
+  margin-top: 1.6rem;
 }
-.skelText {
-  font-size: 0.86rem;
+.trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  justify-content: center;
+  margin-top: 1.8rem;
+}
+.chip {
+  font-family: var(--vt-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
   color: var(--vt-ink-faint);
-}
-.skelSpinner {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 3px solid var(--vt-line-strong);
-  border-top-color: var(--vt-green-600);
-  animation: vt-spin 0.9s linear infinite;
-}
-@keyframes vt-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .skelSpinner {
-    animation: none;
-  }
+  border: 1px solid var(--vt-line-strong);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
 }
