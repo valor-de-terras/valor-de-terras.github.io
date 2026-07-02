@@ -94,6 +94,14 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
 }
 
+/** Envia o e-mail de recuperação de senha (self-service). Requer e-mail habilitado no Supabase. */
+export async function sendPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: window.location.origin + window.location.pathname,
+  });
+  if (error) throw error;
+}
+
 // ── solicitante ──────────────────────────────────────────────────────────────
 export async function proceedToReview(requestId: string, c: ContactInput): Promise<void> {
   const { error } = await supabase.rpc("proceed_to_technical_review", {
@@ -263,6 +271,15 @@ export async function adminSetValidity(profileId: string, months: number): Promi
 export async function adminSetActive(profileId: string, active: boolean): Promise<void> {
   const { error } = await supabase.rpc("admin_set_technician_active", { p_profile_id: profileId, p_active: active });
   if (error) throw error;
+}
+
+/** Admin redefine a senha temporária de um engenheiro (recuperação de acesso sem SMTP). */
+export async function adminResetPassword(profileId: string, password: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+    body: { profile_id: profileId, password },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
 }
 
 /** Troca a senha do usuário logado (útil para o engenheiro trocar a senha temporária). */

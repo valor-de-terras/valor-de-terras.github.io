@@ -13,13 +13,15 @@ import TechStack from "./components/sections/TechStack";
 import Roadmap from "./components/sections/Roadmap";
 import Faq from "./components/sections/Faq";
 import CtaBand from "./components/sections/CtaBand";
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { useHashRoute } from "./lib/router";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 // Rotas carregadas sob demanda (não pesam a landing com maplibre/supabase).
 const PortalApp = lazy(() => import("./portal/PortalApp"));
 const MyRequests = lazy(() => import("./tracking/MyRequests"));
+const Legal = lazy(() => import("./legal/Legal"));
+const RecoverPassword = lazy(() => import("./portal/RecoverPassword"));
 
 function RouteShell({ children, label }: { children: ReactNode; label: string }) {
   return (
@@ -33,11 +35,20 @@ function RouteShell({ children, label }: { children: ReactNode; label: string })
 
 export default function App() {
   const hash = useHashRoute();
+  // Link de recuperação de senha (volta do e-mail com access_token/type=recovery no hash).
+  // Latch uma vez: mesmo que o supabase limpe o hash, a tela de recuperação permanece.
+  const [isRecovery] = useState(() => {
+    const h = window.location.hash || "";
+    return h.includes("type=recovery") || h.includes("access_token=");
+  });
+  if (isRecovery) return <RouteShell label="recuperação"><RecoverPassword /></RouteShell>;
+
   // aceita "#portal" e "#/portal" (e idem para pedidos); âncoras de seção (#demo, #precos) caem na landing.
-  const seg = hash.replace(/^#\/?/, "").split(/[/?]/)[0];
+  const seg = hash.replace(/^#\/?/, "").split(/[/?#]/)[0];
 
   if (seg === "portal") return <RouteShell label="painel"><PortalApp /></RouteShell>;
   if (seg === "pedidos") return <RouteShell label="seus pedidos"><MyRequests /></RouteShell>;
+  if (seg === "privacidade") return <RouteShell label="a página"><Legal /></RouteShell>;
 
   return (
     <>

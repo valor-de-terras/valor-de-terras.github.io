@@ -46,7 +46,10 @@ export default function Footer() {
       </div>
 
       <div className={`vt-container ${styles.bottom}`}>
-        <span>© {YEAR} Valor de Terras · Feito no Paraná 🌲</span>
+        <span>
+          © {YEAR} Valor de Terras · Feito no Paraná 🌲 ·{" "}
+          <a href="#/privacidade">Privacidade e Termos</a>
+        </span>
         <span className={styles.legal}>
           Plataforma de produção assistida. O laudo formal exige responsabilidade técnica (ART)
           de profissional habilitado junto ao CREA.
