@@ -77,5 +77,41 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return jsonResponse({ request_id: requestId, estimate, enrichment }, origin);
+  // FRENTE A (gating): o valor estimado NÃO vai para o cliente na prévia. Ele fica
+  // persistido no servidor (pela RPC) e só é revelado no laudo formal, com ART. Aqui
+  // removemos todos os campos monetários da resposta e mascaramos R$ no enriquecimento,
+  // para que o número não chegue ao navegador nem possa ser reconstruído.
+  const maskMoney = (s: unknown) =>
+    typeof s === "string" ? s.replace(/R\$\s?\d[\d.,]*/g, "R$ •••") : s;
+
+  const safeEnrichment = Array.isArray(enrichment)
+    ? enrichment.map((l: Record<string, unknown>) => {
+        const c = { ...l, result: maskMoney(l.result) };
+        delete (c as Record<string, unknown>).payload; // pode conter preço-base
+        return c;
+      })
+    : enrichment;
+
+  let safeEstimate: unknown = estimate;
+  if (estimate && typeof estimate === "object") {
+    const e = { ...(estimate as Record<string, unknown>) };
+    delete e.price_per_ha;
+    delete e.total;
+    delete e.comp;
+    if (Array.isArray(e.comparables)) {
+      e.comparables = e.comparables.map((c: Record<string, unknown>) => {
+        const cc = { ...c };
+        delete cc.price_per_ha;
+        delete cc.homogenized_price_per_ha;
+        return cc;
+      });
+    }
+    e.locked = true; // sinaliza ao front que o valor está retido para o laudo formal
+    safeEstimate = e;
+  }
+
+  return jsonResponse(
+    { request_id: requestId, estimate: safeEstimate, enrichment: safeEnrichment },
+    origin,
+  );
 });

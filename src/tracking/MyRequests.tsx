@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ensureAnonSession } from "../lib/supabase";
 import { getMyRequests, reportLink, type MyRequestItem } from "../lib/portal";
-import { fmtArea, fmtBRLCompact } from "../lib/format";
+import { fmtArea } from "../lib/format";
 import styles from "./tracking.module.css";
 
 interface StatusView { label: string; cls: string; }
@@ -85,7 +85,6 @@ export default function MyRequests() {
                     </div>
                     <div className={styles.meta}>
                       <span>{fmtArea(r.area_ha)}</span>
-                      {r.total_avg != null && <span>· estimativa {fmtBRLCompact(r.total_avg)}</span>}
                       <span className={styles.mono}>· #{r.request_id.slice(0, 8).toUpperCase()}</span>
                     </div>
                   </div>

@@ -62,13 +62,17 @@ export async function appraiseViaBackend(
   const grau: EstimateResult["grau"] =
     est.grade === "iii" ? "III" : est.grade === "ii" ? "II" : "I";
 
+  // FRENTE A (gating): o backend não envia mais os campos monetários na prévia — o valor
+  // só é revelado no laudo formal. Toleramos a ausência (a UI já exibe a tarja no lugar).
+  const total = est.total ?? {};
+  const pph = est.price_per_ha ?? {};
   const estimate: EstimateResult = {
-    min: est.total.min,
-    avg: est.total.avg,
-    max: est.total.max,
-    pricePerHaMin: est.price_per_ha.min,
-    pricePerHaAvg: est.price_per_ha.avg,
-    pricePerHaMax: est.price_per_ha.max,
+    min: total.min ?? 0,
+    avg: total.avg ?? 0,
+    max: total.max ?? 0,
+    pricePerHaMin: pph.min ?? 0,
+    pricePerHaAvg: pph.avg ?? 0,
+    pricePerHaMax: pph.max ?? 0,
     grau,
     comparablesUsed: est.comparables_used,
     modelVersion: est.model_version,
@@ -79,8 +83,8 @@ export async function appraiseViaBackend(
       id: `cmp-${i + 1}`,
       distanceKm: Number(c.distance_km),
       areaHa: Number(c.area_ha),
-      pricePerHa: Number(c.price_per_ha),
-      homogenizedPricePerHa: Number(c.homogenized_price_per_ha),
+      pricePerHa: Number(c.price_per_ha ?? 0),
+      homogenizedPricePerHa: Number(c.homogenized_price_per_ha ?? 0),
       use: String(c.land_use),
       source: String(c.source),
     })
