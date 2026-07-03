@@ -22,8 +22,8 @@ interface Props {
   comparables?: CompMarker[];
   enableClick?: boolean;
   carOverlay?: boolean;
-  /** bbox [oeste, sul, leste, norte] do município escolhido, para dar zoom na região */
-  carTarget?: [number, number, number, number] | null;
+  /** centro [lon, lat] do município escolhido, para dar zoom na região */
+  carTarget?: [number, number] | null;
   onMapClick?: (lng: number, lat: number) => void;
 }
 
@@ -185,13 +185,12 @@ export default function MapView({
     else map.once("load", apply);
   }, [carOverlay]);
 
-  // modo CAR: voa até o município escolhido (bbox do geocode)
+  // modo CAR: voa até o centro do município num zoom fixo e fechado. Evitar fitBounds na
+  // bbox inteira (municípios grandes zoomam demais para fora e o WMS do SICAR fica lento).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !carTarget) return;
-    const [w, s, e, n] = carTarget;
-    const apply = () =>
-      map.fitBounds([[w, s], [e, n]], { padding: 40, maxZoom: 13, duration: 1200 });
+    const apply = () => map.flyTo({ center: carTarget, zoom: 12, duration: 1400, essential: true });
     if (readyRef.current) apply();
     else map.once("load", apply);
   }, [carTarget]);

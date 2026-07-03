@@ -56,7 +56,7 @@ export default function MapDemo() {
   const [dragOver, setDragOver] = useState(false);
   const [carLoading, setCarLoading] = useState(false);
   const [carMunicipio, setCarMunicipio] = useState("");
-  const [carTarget, setCarTarget] = useState<[number, number, number, number] | null>(null);
+  const [carTarget, setCarTarget] = useState<[number, number] | null>(null);
   const [carGeoLoading, setCarGeoLoading] = useState(false);
   const [carGeoError, setCarGeoError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -126,7 +126,7 @@ export default function MapDemo() {
           setCarGeoError("Não consegui localizar esse município. Tente outro.");
           return;
         }
-        setCarTarget(loc.bbox);
+        setCarTarget(loc.center);
       })
       .catch((e) => {
         if ((e as Error)?.name !== "AbortError") {
