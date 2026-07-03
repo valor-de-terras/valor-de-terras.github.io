@@ -82,6 +82,39 @@
   border-left: 2px solid var(--vt-green-300);
   padding-left: 0.6rem;
 }
+.muniPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--vt-line);
+}
+.muniLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--vt-ink-soft);
+}
+.muniRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.muniInput {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--vt-ink);
+  background: var(--vt-paper);
+  border: 1px solid var(--vt-line-strong);
+  border-radius: var(--vt-radius-sm);
+  padding: 0.55rem 0.7rem;
+}
+.muniInput:focus {
+  outline: none;
+  border-color: var(--vt-green-600);
+  box-shadow: 0 0 0 3px rgba(31, 117, 81, 0.14);
+}
 .carLoading {
   display: flex;
   align-items: center;

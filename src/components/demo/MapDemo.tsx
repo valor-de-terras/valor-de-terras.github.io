@@ -6,7 +6,8 @@ import ReportPreview from "./ReportPreview";
 import RequestReportModal from "./RequestReportModal";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
 import { areaHa } from "../../lib/geo";
-import { fetchCarAtPoint, municipioBasePrice } from "../../lib/sicar";
+import { fetchCarAtPoint, municipioBasePrice, geocodeMunicipioPR } from "../../lib/sicar";
+import { PARANA_MUNICIPIOS } from "../../data/paranaMunicipios";
 import { appraiseViaBackend } from "../../lib/backend";
 import {
   ENRICHMENT_LAYERS,
@@ -54,9 +55,14 @@ export default function MapDemo() {
   const [reportRequestOpen, setReportRequestOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [carLoading, setCarLoading] = useState(false);
+  const [carMunicipio, setCarMunicipio] = useState("");
+  const [carTarget, setCarTarget] = useState<[number, number, number, number] | null>(null);
+  const [carGeoLoading, setCarGeoLoading] = useState(false);
+  const [carGeoError, setCarGeoError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const timersRef = useRef<number[]>([]);
   const carAbortRef = useRef<AbortController | null>(null);
+  const geoAbortRef = useRef<AbortController | null>(null);
 
   const clearTimers = () => {
     timersRef.current.forEach((t) => window.clearTimeout(t));
@@ -67,7 +73,11 @@ export default function MapDemo() {
     clearTimers();
     carAbortRef.current?.abort();
     carAbortRef.current = null;
+    geoAbortRef.current?.abort();
+    geoAbortRef.current = null;
     setCarLoading(false);
+    setCarGeoLoading(false);
+    setCarGeoError(null);
     setParcel(null);
     setMeta(null);
     setStatus("empty");
@@ -98,6 +108,37 @@ export default function MapDemo() {
       basePricePerHa: s.basePricePerHa,
       origin: "car",
     });
+  };
+
+  // Escolha de município no modo CAR: geocodifica e voa o mapa até a região.
+  const onPickMunicipio = (value: string) => {
+    setCarMunicipio(value);
+    setCarGeoError(null);
+    if (!PARANA_MUNICIPIOS.includes(value)) return; // só busca quando casa um município da lista
+    geoAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    geoAbortRef.current = ctrl;
+    setCarGeoLoading(true);
+    geocodeMunicipioPR(value, ctrl.signal)
+      .then((loc) => {
+        if (ctrl.signal.aborted) return;
+        if (!loc) {
+          setCarGeoError("Não consegui localizar esse município. Tente outro.");
+          return;
+        }
+        setCarTarget(loc.bbox);
+      })
+      .catch((e) => {
+        if ((e as Error)?.name !== "AbortError") {
+          setCarGeoError("Falha ao localizar o município. Verifique a conexão.");
+        }
+      })
+      .finally(() => {
+        if (geoAbortRef.current === ctrl) {
+          setCarGeoLoading(false);
+          geoAbortRef.current = null;
+        }
+      });
   };
 
   const onMapClick = useCallback(
@@ -295,14 +336,38 @@ export default function MapDemo() {
 
             {mode === "car" && (
               <div className={styles.hint}>
+                <div className={styles.muniPicker}>
+                  <label className={styles.muniLabel} htmlFor="muni-input">
+                    1. Escolha o município (Paraná)
+                  </label>
+                  <div className={styles.muniRow}>
+                    <input
+                      id="muni-input"
+                      list="pr-munis"
+                      className={styles.muniInput}
+                      placeholder="Digite ou selecione…"
+                      value={carMunicipio}
+                      onChange={(e) => onPickMunicipio(e.target.value)}
+                      autoComplete="off"
+                    />
+                    {carGeoLoading && <span className={styles.carSpin} aria-label="localizando" />}
+                  </div>
+                  <datalist id="pr-munis">
+                    {PARANA_MUNICIPIOS.map((m) => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
+                  {carGeoError && <p className={styles.error}>{carGeoError}</p>}
+                </div>
+
                 <p>
-                  <strong>Clique sobre um imóvel no mapa.</strong> O sistema consulta o
+                  <strong>2. Clique sobre um imóvel no mapa.</strong> O sistema consulta o
                   SICAR e seleciona o <strong>CAR real</strong> sobreposto ao ponto, com
                   geometria e atributos oficiais (município, área, código do imóvel).
                 </p>
                 <p className={styles.carNote}>
-                  Aproxime o zoom até ver os imóveis (polígonos cinza) e clique em um deles.
-                  Fonte: SICAR / Serviço Florestal Brasileiro.
+                  Ao escolher o município, o mapa vai até a região. Aproxime até ver os imóveis
+                  (polígonos cinza) e clique em um deles. Fonte: SICAR / Serviço Florestal Brasileiro.
                 </p>
                 {carLoading && (
                   <p className={styles.carLoading}>
@@ -392,6 +457,7 @@ export default function MapDemo() {
               comparables={compMarkers}
               enableClick={mode === "car"}
               carOverlay={mode === "car"}
+              carTarget={carTarget}
               onMapClick={onMapClick}
             />
             {!parcel && (
@@ -399,7 +465,9 @@ export default function MapDemo() {
                 {mode === "car"
                   ? carLoading
                     ? "Consultando o SICAR…"
-                    : "Clique sobre um imóvel (CAR) no mapa"
+                    : carTarget
+                      ? "Clique sobre um imóvel (CAR) no mapa"
+                      : "Escolha o município ao lado para começar"
                   : "Escolha um imóvel para visualizar"}
               </div>
             )}

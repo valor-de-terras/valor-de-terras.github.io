@@ -22,12 +22,12 @@ interface Props {
   comparables?: CompMarker[];
   enableClick?: boolean;
   carOverlay?: boolean;
+  /** bbox [oeste, sul, leste, norte] do município escolhido, para dar zoom na região */
+  carTarget?: [number, number, number, number] | null;
   onMapClick?: (lng: number, lat: number) => void;
 }
 
 const PARANA_CENTER: [number, number] = [-51.5, -24.9];
-// Campos Gerais (Castro/PR): área agrícola com CAR denso, para "aterrissar" no modo CAR.
-const CAR_FOCUS: [number, number] = [-49.97, -24.84];
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
 
 const BASE_STYLE: StyleSpecification = {
@@ -105,6 +105,7 @@ export default function MapView({
   comparables,
   enableClick,
   carOverlay,
+  carTarget,
   onMapClick,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -179,13 +180,21 @@ export default function MapView({
     const apply = () => {
       if (!map.getLayer("sicar")) return;
       map.setLayoutProperty("sicar", "visibility", carOverlay ? "visible" : "none");
-      if (carOverlay && map.getZoom() < 9) {
-        map.easeTo({ center: CAR_FOCUS, zoom: 11.5, duration: 1200 });
-      }
     };
     if (readyRef.current) apply();
     else map.once("load", apply);
   }, [carOverlay]);
+
+  // modo CAR: voa até o município escolhido (bbox do geocode)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !carTarget) return;
+    const [w, s, e, n] = carTarget;
+    const apply = () =>
+      map.fitBounds([[w, s], [e, n]], { padding: 40, maxZoom: 13, duration: 1200 });
+    if (readyRef.current) apply();
+    else map.once("load", apply);
+  }, [carTarget]);
 
   // basemap toggle
   useEffect(() => {

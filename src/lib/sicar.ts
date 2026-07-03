@@ -145,3 +145,36 @@ export function municipioBasePrice(municipio: string, uf: string): number {
   const key = municipio.trim().toLowerCase();
   return MUNI_BASE[key] ?? UF_BASE[uf.toUpperCase()] ?? 60000;
 }
+
+export interface MuniLocation {
+  /** [oeste, sul, leste, norte] em graus (lon/lat) */
+  bbox: [number, number, number, number];
+  center: [number, number]; // [lon, lat]
+}
+
+/**
+ * Geocodifica um município do Paraná (Nominatim/OSM) para levar o mapa até a região.
+ * Retorna a bounding box do município para dar zoom (fitBounds).
+ */
+export async function geocodeMunicipioPR(
+  nome: string,
+  signal?: AbortSignal
+): Promise<MuniLocation | null> {
+  const q = encodeURIComponent(`${nome}, Paraná, Brasil`);
+  const url =
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1` +
+    `&countrycodes=br&q=${q}`;
+  const res = await fetch(url, { signal, headers: { Accept: "application/json" } });
+  if (!res.ok) return null;
+  const arr = (await res.json()) as Array<{
+    boundingbox?: [string, string, string, string];
+    lat?: string;
+    lon?: string;
+  }>;
+  const hit = Array.isArray(arr) ? arr[0] : null;
+  if (!hit?.boundingbox || hit.lon == null || hit.lat == null) return null;
+  // Nominatim: boundingbox = [sul, norte, oeste, leste]
+  const [south, north, west, east] = hit.boundingbox.map(Number);
+  if ([south, north, west, east].some((n) => !Number.isFinite(n))) return null;
+  return { bbox: [west, south, east, north], center: [Number(hit.lon), Number(hit.lat)] };
+}
