@@ -55,6 +55,10 @@ export interface EstimateResult {
   /** Grau de fundamentação NBR 14.653-3: I, II ou III. A automação entrega no máximo
    *  Grau I (preliminar); a revisão técnica com ART pode elevar para II/III. */
   grau: "I" | "II" | "III";
+  /** Grau de precisão NBR (amplitude do IC 80%): I, II ou III. Calculado no servidor. */
+  grauPrecisao?: "I" | "II" | "III";
+  /** Coeficiente de variação da amostra saneada (Chauvenet). */
+  cv?: number;
   comparablesUsed: number;
   modelVersion: string;
 }

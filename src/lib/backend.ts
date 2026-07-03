@@ -61,6 +61,9 @@ export async function appraiseViaBackend(
   // NBR 14.653-3. Graus II/III dependem da revisão e qualificação do responsável técnico.
   const grau: EstimateResult["grau"] =
     est.grade === "iii" ? "III" : est.grade === "ii" ? "II" : "I";
+  const grauPrecisao: EstimateResult["grauPrecisao"] =
+    est.grade_precision === "iii" ? "III" : est.grade_precision === "ii" ? "II"
+      : est.grade_precision === "i" ? "I" : undefined;
 
   // FRENTE A (gating): o backend não envia mais os campos monetários na prévia — o valor
   // só é revelado no laudo formal. Toleramos a ausência (a UI já exibe a tarja no lugar).
@@ -74,6 +77,8 @@ export async function appraiseViaBackend(
     pricePerHaAvg: pph.avg ?? 0,
     pricePerHaMax: pph.max ?? 0,
     grau,
+    grauPrecisao,
+    cv: typeof est.cv === "number" ? est.cv : undefined,
     comparablesUsed: est.comparables_used,
     modelVersion: est.model_version,
   };

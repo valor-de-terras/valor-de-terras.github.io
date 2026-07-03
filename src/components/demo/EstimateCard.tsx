@@ -37,7 +37,13 @@ export default function EstimateCard({
           </span>
         )}
         <span className={styles.grau}>
-          Fundamentação NBR 14.653-3: <strong>Grau {result.grau}</strong> (preliminar) · modelo{" "}
+          Fundamentação NBR 14.653-3: <strong>Grau {result.grau}</strong> (preliminar)
+          {result.grauPrecisao && (
+            <>
+              {" "}· Precisão <strong>Grau {result.grauPrecisao}</strong>
+            </>
+          )}
+          {result.cv != null && <> · CV {(result.cv * 100).toFixed(1)}%</>} · modelo{" "}
           {result.modelVersion}
         </span>
       </div>

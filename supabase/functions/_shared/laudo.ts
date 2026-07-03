@@ -319,6 +319,11 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
   const artNumber = String(rep.art_number ?? "");
   const genAt = new Date().toISOString();
   const modelVersion = String(est.model_version ?? "homog-nbr-0.5.0");
+  // Tratamento estatístico (Frente D): saneamento Chauvenet + IC 80% -> Grau de Precisão.
+  const precisao = String(est.grau_precisao ?? "").toUpperCase();
+  const cvPct = est.cv != null ? Number(est.cv) * 100 : null;
+  const nSan = est.n_sanitized != null ? Number(est.n_sanitized) : null;
+  const nOut = est.n_outliers != null ? Number(est.n_outliers) : null;
 
   const total = Number(rep.final_total ?? est.total_avg ?? 0);
   const areaHa = Number(prop.area_ha ?? 0);
@@ -327,15 +332,9 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     ? total / areaHa
     : Number(rep.final_price_per_ha ?? est.price_per_ha_avg ?? 0);
 
-  // Campo de arbítrio proporcional ao valor CONCLUÍDO (nunca deixa a conclusão
-  // cair fora da própria faixa quando o engenheiro ajusta o valor final).
-  const estAvg = Number(est.total_avg ?? 0);
-  const estMin = Number(est.total_min ?? 0);
-  const estMax = Number(est.total_max ?? 0);
-  const relMin = estAvg > 0 && estMin > 0 ? estMin / estAvg : 0.88;
-  const relMax = estAvg > 0 && estMax > 0 ? estMax / estAvg : 1.13;
-  const totalMin = total * relMin;
-  const totalMax = total * relMax;
+  // Campo de arbítrio ±15% (NBR 14.653) em torno do valor concluído.
+  const totalMin = total * 0.85;
+  const totalMax = total * 1.15;
 
   const locality = `${prop.municipality ?? "-"}${prop.uf ? "/" + prop.uf : ""}`;
   const purposeKey = String(req.purpose ?? "outro");
@@ -360,7 +359,10 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
   doc.y = PH - 172;
   // faixa do grau
   p.drawRectangle({ x: M, y: doc.y - 26, width: PW - 2 * M, height: 30, color: BG, borderColor: LINE, borderWidth: 1 });
-  p.drawText(san(`Fundamentação NBR 14.653-3: Grau ${grade}`), { x: M + 10, y: doc.y - 15, size: 10, font: doc.bold, color: BRAND });
+  let fundTxt = `Fundamentação NBR 14.653-3: Grau ${grade}`;
+  if (precisao) fundTxt += ` - Precisão Grau ${precisao}`;
+  if (cvPct != null) fundTxt += ` - CV ${cvPct.toFixed(1)}%`;
+  p.drawText(san(fundTxt), { x: M + 10, y: doc.y - 15, size: 9, font: doc.bold, color: BRAND });
   p.drawText(san(`Laudo No ${shortId}`), { x: PW - M - 120, y: doc.y - 15, size: 10, font: doc.bold, color: INK });
   doc.y -= 44;
 
@@ -448,7 +450,14 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     [0.06, 0.12, 0.14, 0.32, 0.18, 0.18],
     ["l", "r", "r", "l", "r", "r"]
   );
-  doc.paragraph(`Comparativos utilizados: ${comps.length}. Fonte predominante: ${String(comps[0]?.source ?? "DERAL/SEAB-PR")}.`, { size: 8.5, color: MUTED });
+  let statTxt = `Comparativos utilizados: ${comps.length}. Fonte predominante: ${String(comps[0]?.source ?? "DERAL/SEAB-PR")}.`;
+  if (nSan != null) {
+    statTxt += ` Saneamento por critério de Chauvenet: ${nSan} dado(s) mantido(s)${nOut ? `, ${nOut} excluído(s)` : ", nenhum excluído"}.`;
+  }
+  if (precisao) {
+    statTxt += ` Intervalo de confiança de 80% (t de Student)${cvPct != null ? `, CV ${cvPct.toFixed(1)}%` : ""}; Grau de Precisão ${precisao} conforme NBR 14.653.`;
+  }
+  doc.paragraph(statTxt, { size: 8.5, color: MUTED });
 
   // ── 7. Conclusão ──
   doc.heading("7", "Conclusão - valor de mercado");
