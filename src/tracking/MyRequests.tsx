@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ensureAnonSession } from "../lib/supabase";
 import { getMyRequests, reportLink, type MyRequestItem } from "../lib/portal";
 import { fmtArea } from "../lib/format";
+import MatriculaBox from "./MatriculaBox";
 import styles from "./tracking.module.css";
 
 interface StatusView { label: string; cls: string; }
@@ -79,27 +80,32 @@ export default function MyRequests() {
               const sv = statusView(r.status);
               return (
                 <div key={r.request_id} className={styles.card}>
-                  <div className={styles.info}>
-                    <div className={styles.muni}>
-                      {r.municipality ?? "Imóvel"}{r.uf ? `/${r.uf}` : ""}
+                  <div className={styles.cardTop}>
+                    <div className={styles.info}>
+                      <div className={styles.muni}>
+                        {r.municipality ?? "Imóvel"}{r.uf ? `/${r.uf}` : ""}
+                      </div>
+                      <div className={styles.meta}>
+                        <span>{fmtArea(r.area_ha)}</span>
+                        <span className={styles.mono}>· #{r.request_id.slice(0, 8).toUpperCase()}</span>
+                      </div>
                     </div>
-                    <div className={styles.meta}>
-                      <span>{fmtArea(r.area_ha)}</span>
-                      <span className={styles.mono}>· #{r.request_id.slice(0, 8).toUpperCase()}</span>
+                    <div className={styles.right}>
+                      <span className={`${styles.badge} ${sv.cls}`}>{sv.label}</span>
+                      {r.status === "DELIVERED" && r.has_report && (
+                        <button
+                          className="vt-btn vt-btn-primary"
+                          onClick={() => void onDownload(r.request_id)}
+                          disabled={busyId === r.request_id}
+                        >
+                          {busyId === r.request_id ? "Abrindo…" : "Baixar laudo (PDF)"}
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className={styles.right}>
-                    <span className={`${styles.badge} ${sv.cls}`}>{sv.label}</span>
-                    {r.status === "DELIVERED" && r.has_report && (
-                      <button
-                        className="vt-btn vt-btn-primary"
-                        onClick={() => void onDownload(r.request_id)}
-                        disabled={busyId === r.request_id}
-                      >
-                        {busyId === r.request_id ? "Abrindo…" : "Baixar laudo (PDF)"}
-                      </button>
-                    )}
-                  </div>
+                  {r.status !== "CANCELLED_BY_USER" && (
+                    <MatriculaBox requestId={r.request_id} />
+                  )}
                 </div>
               );
             })}
