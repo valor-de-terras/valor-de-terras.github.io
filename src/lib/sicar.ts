@@ -65,7 +65,11 @@ export function ufForCenter(lng: number, lat: number): string {
   return candidateUfs(lng, lat)[0] ?? "pr";
 }
 
-/** URL de tiles WMS (MapLibre) para a camada de imóveis CAR de uma UF. */
+/**
+ * URL de tiles WMS (MapLibre) para a camada de imóveis CAR de uma UF.
+ * Tiles de 512px (metade das requisições ao GeoServer, que é lento) — combina com
+ * `tileSize: 512` na source do MapView.
+ */
 export function wmsTiles(uf: string): string {
   const params = new URLSearchParams({
     SERVICE: "WMS",
@@ -74,8 +78,8 @@ export function wmsTiles(uf: string): string {
     LAYERS: `sicar_imoveis_${uf}`,
     SRS: "EPSG:3857",
     BBOX: "{bbox-epsg-3857}",
-    WIDTH: "256",
-    HEIGHT: "256",
+    WIDTH: "512",
+    HEIGHT: "512",
     FORMAT: "image/png",
     TRANSPARENT: "true",
   });

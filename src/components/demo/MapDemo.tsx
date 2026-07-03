@@ -33,6 +33,9 @@ interface Meta {
 }
 
 const STEP_MS = 540;
+// Se o backend (enriquecimento com fontes abertas) demorar demais, cai no motor local
+// instantâneo — a estimativa nunca fica "pendurada".
+const BACKEND_TIMEOUT_MS = 20000;
 
 export default function MapDemo() {
   const [mode, setMode] = useState<Mode>("sample");
@@ -236,12 +239,21 @@ export default function MapDemo() {
       setStatus("done");
     };
 
-    appraiseViaBackend(parcel, {
+    const backendCall = appraiseViaBackend(parcel, {
       municipality: meta.municipality,
       uf: meta.uf,
       carCode: meta.carCode,
       origin: meta.origin,
-    })
+    });
+    const timeout = new Promise<never>((_, reject) => {
+      const t = window.setTimeout(
+        () => reject(new Error("backend-timeout")),
+        BACKEND_TIMEOUT_MS
+      );
+      timersRef.current.push(t);
+    });
+
+    Promise.race([backendCall, timeout])
       .then((r) => {
         clearTimers();
         setLiveLayers(r.layers);

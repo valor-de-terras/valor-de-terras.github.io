@@ -55,7 +55,7 @@ const BASE_STYLE: StyleSpecification = {
     sicar: {
       type: "raster",
       tiles: [wmsTiles("pr")],
-      tileSize: 256,
+      tileSize: 512, // 512px = ~4x menos requisições ao GeoServer lento do SICAR
       attribution:
         'Imóveis CAR © <a href="https://www.car.gov.br/">SICAR</a> / SFB',
     },
@@ -71,7 +71,7 @@ const BASE_STYLE: StyleSpecification = {
       source: "sicar",
       minzoom: 9,
       layout: { visibility: "none" },
-      paint: { "raster-opacity": 0.7 },
+      paint: { "raster-opacity": 0.7, "raster-fade-duration": 0 },
     },
     {
       id: "parcel-fill",
@@ -115,6 +115,7 @@ export default function MapView({
   const enableRef = useRef(enableClick);
   const ufRef = useRef("pr");
   const [basemap, setBasemap] = useState<"carto" | "esri">("carto");
+  const [tilesLoading, setTilesLoading] = useState(false);
 
   clickCbRef.current = onMapClick;
   enableRef.current = enableClick;
@@ -135,6 +136,11 @@ export default function MapView({
     map.on("load", () => {
       readyRef.current = true;
     });
+    // indicador de carregamento (tiles do SICAR são lentos): mostra enquanto há tiles pendentes
+    const syncLoading = () => setTilesLoading(!map.areTilesLoaded());
+    map.on("dataloading", syncLoading);
+    map.on("data", syncLoading);
+    map.on("idle", () => setTilesLoading(false));
     map.on("click", (e) => {
       if (enableRef.current && clickCbRef.current)
         clickCbRef.current(e.lngLat.lng, e.lngLat.lat);
@@ -252,6 +258,11 @@ export default function MapView({
   return (
     <div className={styles.wrap}>
       <div ref={containerRef} className={styles.map} aria-label="Mapa interativo do imóvel" />
+      {carOverlay && tilesLoading && (
+        <div className={styles.tilesBadge} role="status">
+          <span className={styles.tilesSpin} /> carregando imóveis CAR…
+        </div>
+      )}
       <div className={styles.basemapToggle} role="group" aria-label="Tipo de mapa">
         <button
           type="button"

@@ -57,7 +57,7 @@ async function relevo(lon: number, lat: number): Promise<Layer> {
   const d = 0.005;
   const lats = [lat, lat + d, lat - d, lat, lat].join(",");
   const lons = [lon, lon, lon, lon + d, lon - d].join(",");
-  const { signal, clear } = withTimeout(8000);
+  const { signal, clear } = withTimeout(6000);
   try {
     const r = await fetch(
       `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`,
@@ -89,7 +89,7 @@ async function relevo(lon: number, lat: number): Promise<Layer> {
 }
 
 async function clima(lon: number, lat: number): Promise<Layer> {
-  const { signal, clear } = withTimeout(9000);
+  const { signal, clear } = withTimeout(7000);
   try {
     const r = await fetch(
       `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=2023-01-01&end_date=2023-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto`,
@@ -119,9 +119,9 @@ async function clima(lon: number, lat: number): Promise<Layer> {
 }
 
 async function osm(lon: number, lat: number): Promise<{ acesso: Layer; hidro: Layer }> {
-  const { signal, clear } = withTimeout(14000);
+  const { signal, clear } = withTimeout(8000);
   const q =
-    `[out:json][timeout:12];(` +
+    `[out:json][timeout:7];(` +
     `way(around:8000,${lat},${lon})[highway~"motorway|trunk|primary|secondary|tertiary"];` +
     `way(around:3000,${lat},${lon})[waterway~"river|stream|canal"];` +
     `);out tags center 60;`;
@@ -198,7 +198,7 @@ const MB: Record<number, [string, number, boolean]> = {
 };
 
 async function uso(lon: number, lat: number): Promise<Layer> {
-  const { signal, clear } = withTimeout(16000);
+  const { signal, clear } = withTimeout(12000);
   try {
     const tiff = await fromUrl(MB_URL, { signal } as any);
     const img = await tiff.getImage();
@@ -210,16 +210,18 @@ async function uso(lon: number, lat: number): Promise<Layer> {
     const pts: [number, number][] = [
       [lon, lat], [lon + dd, lat], [lon - dd, lat], [lon, lat + dd], [lon, lat - dd],
     ];
-    const classes: number[] = [];
-    for (const [x, y] of pts) {
-      const px = Math.floor((x - ox) / rx);
-      const py = Math.floor((y - oy) / ry);
-      if (px < 0 || py < 0 || px >= W || py >= H) continue;
-      const d = await img.readRasters({ window: [px, py, px + 1, py + 1] });
-      const v = Number((d[0] as ArrayLike<number>)[0]);
-      if (v && v > 0) classes.push(v);
-    }
+    // lê os 5 pixels em paralelo (range requests concorrentes) — corta o maior rabo da estimativa
+    const reads = await Promise.all(
+      pts.map(async ([x, y]) => {
+        const px = Math.floor((x - ox) / rx);
+        const py = Math.floor((y - oy) / ry);
+        if (px < 0 || py < 0 || px >= W || py >= H) return 0;
+        const d = await img.readRasters({ window: [px, py, px + 1, py + 1] });
+        return Number((d[0] as ArrayLike<number>)[0]);
+      }),
+    );
     clear();
+    const classes: number[] = reads.filter((v) => v && v > 0);
     if (!classes.length) throw new Error("sem dados MapBiomas");
     const counts: Record<number, number> = {};
     for (const c of classes) counts[c] = (counts[c] ?? 0) + 1;
@@ -256,7 +258,7 @@ const SOLO: Record<string, [number, string]> = {
 };
 
 async function solo(lon: number, lat: number): Promise<Layer> {
-  const { signal, clear } = withTimeout(12000);
+  const { signal, clear } = withTimeout(8000);
   const d = 0.02;
   const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
   const url =
@@ -285,7 +287,7 @@ async function solo(lon: number, lat: number): Promise<Layer> {
 
 // ---- Embargos: IBAMA Áreas Embargadas (WMS GetFeatureInfo) ----
 async function embargo(lon: number, lat: number): Promise<Layer> {
-  const { signal, clear } = withTimeout(10000);
+  const { signal, clear } = withTimeout(7000);
   const d = 0.01;
   const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
   const url =
