@@ -1,0 +1,43 @@
+# Snapshot diário da CAIXA (Frente B) -> market_listings + listing_snapshots.
+# O sinal de iliquidez (dias_ativo) só acumula com a execução diária: cada run marca a
+# presença do imóvel; quando ele some do arquivo, o status vira 'inativo' (proxy de venda).
+#
+# ATIVAÇÃO (uma vez): adicionar o segredo do repositório com a service_role key.
+#   gh secret set SUPABASE_SERVICE_ROLE_KEY --repo valor-de-terras/valor-de-terras.github.io
+# NOTA DE SEGURANÇA: a service_role ignora a RLS (acesso total). Este repo é PÚBLICO.
+# Preferir, quando possível, uma credencial com escopo restrito (INSERT/UPDATE só nas
+# tabelas market_listings/listing_snapshots/scrape_runs) ou migrar a coleta para uma
+# Edge Function agendada por pg_cron (service role fica server-side, sem segredo no CI).
+
+name: Scrape CAIXA (comparáveis)
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC, após a CAIXA regenerar a lista (~01:00 GMT)
+  workflow_dispatch:
+    inputs:
+      uf:
+        description: "UF(s) separadas por vírgula, ou 'all'"
+        default: "PR"
+
+concurrency:
+  group: scrape-caixa
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Snapshot diário (upsert)
+        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        env:
+          SUPABASE_URL: https://ejwzqrrudgweglxkktan.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scrapers/caixa_imoveis.py --uf "${{ github.event.inputs.uf || 'PR' }}" --upsert
+      - name: Aviso se não ativado
+        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY == '' }}
+        run: echo "Segredo SUPABASE_SERVICE_ROLE_KEY ausente; coleta pulada. Ative com 'gh secret set'."

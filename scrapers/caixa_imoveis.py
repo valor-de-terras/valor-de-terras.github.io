@@ -20,6 +20,7 @@ Uso:
 """
 import argparse
 import csv
+import datetime
 import hashlib
 import io
 import json
@@ -177,28 +178,59 @@ def normalize(d: dict):
     }
 
 
-def upsert(records, batch=200):
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-    if not url or not key:
-        sys.exit("Faltam SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY no ambiente.")
-    endpoint = f"{url}/rest/v1/market_listings?on_conflict=source,source_id"
+def _rest(url, key, path, method, body=None, prefer=None):
     headers = {
         "apikey": key,
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates,return=minimal",
     }
+    if prefer:
+        headers["Prefer"] = prefer
+    data = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(f"{url}/rest/v1/{path}", data=data, headers=headers, method=method)
+    with urllib.request.urlopen(req, timeout=90) as resp:
+        raw = resp.read()
+        if resp.status not in (200, 201, 204):
+            raise RuntimeError(f"{method} {path}: HTTP {resp.status}")
+        return json.loads(raw) if raw else None
+
+
+def load(records, source="caixa", uf=None, batch=200):
+    """Grava a coleta: scrape_run -> market_listings (upsert) -> listing_snapshots (1/anúncio/dia)."""
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if not url or not key:
+        sys.exit("Faltam SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY no ambiente.")
+    today = datetime.date.today().isoformat()
+
+    run = _rest(url, key, "scrape_runs", "POST",
+                {"source": source, "uf": uf, "n_rows": len(records)}, "return=representation")
+    run_id = run[0]["id"] if run else None
+
     total = 0
     for i in range(0, len(records), batch):
         chunk = records[i : i + batch]
-        body = json.dumps(chunk, ensure_ascii=False).encode("utf-8")
-        req = urllib.request.Request(endpoint, data=body, headers=headers, method="POST")
-        with urllib.request.urlopen(req, timeout=90) as resp:
-            if resp.status not in (200, 201, 204):
-                raise RuntimeError(f"upsert falhou: HTTP {resp.status}")
+        _rest(url, key, "market_listings?on_conflict=source,source_id", "POST", chunk,
+              "resolution=merge-duplicates,return=minimal")
         total += len(chunk)
-        print(f"  upsert {total}/{len(records)}")
+        print(f"  market_listings {total}/{len(records)}")
+
+    snaps = [{
+        "source": r["source"], "source_id": r["source_id"], "snapshot_date": today,
+        "run_id": run_id, "preco": r["preco"], "area_m2": r["area_m2"],
+        "content_hash": r["content_hash"], "present": True,
+    } for r in records]
+    sn = 0
+    for i in range(0, len(snaps), batch):
+        chunk = snaps[i : i + batch]
+        _rest(url, key, "listing_snapshots?on_conflict=source,source_id,snapshot_date", "POST",
+              chunk, "resolution=merge-duplicates,return=minimal")
+        sn += len(chunk)
+        print(f"  listing_snapshots {sn}/{len(snaps)}")
+
+    if run_id:
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        _rest(url, key, f"scrape_runs?id=eq.{run_id}", "PATCH", {"finished_at": now_iso}, "return=minimal")
     return total
 
 
@@ -249,8 +281,8 @@ def main():
 
     if args.upsert:
         print(f"\nGravando {total} registros no Supabase...")
-        n = upsert(records)
-        print(f"OK: {n} registros upsertados.")
+        n = load(records, uf=",".join(ufs))
+        print(f"OK: {n} registros gravados (market_listings + listing_snapshots).")
         return
 
     print("\nNada gravado (use --dry-run ou --upsert).")

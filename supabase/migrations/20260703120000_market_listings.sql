@@ -39,7 +39,7 @@ create table if not exists public.market_listings (
   bairro               text,
   endereco             text,
   cep                  text,
-  geom                 geometry(Point, 4326),     -- nulo até geocodificar
+  geom                 extensions.geometry(Point, 4326),  -- nulo até geocodificar (PostGIS em extensions)
   area_m2              numeric,
   area_ha              numeric,
   area_origin          text,                      -- csv_field | regex_descricao | ficha_detalhe
@@ -70,7 +70,7 @@ create table if not exists public.market_listings (
 create index if not exists market_listings_muni_idx   on public.market_listings (municipio_norm, uf);
 create index if not exists market_listings_ibge_idx    on public.market_listings (ibge_municipio_code);
 create index if not exists market_listings_rural_idx   on public.market_listings (rural) where rural;
-create index if not exists market_listings_geom_idx    on public.market_listings using gist (geom);
+create index if not exists market_listings_geom_idx    on public.market_listings using gist (geom extensions.gist_geometry_ops_2d);
 create index if not exists market_listings_active_idx  on public.market_listings (status, first_seen);
 
 -- Preserva first_seen no upsert e recalcula dias_ativo/last_seen (sinal de iliquidez).
