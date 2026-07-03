@@ -19,8 +19,10 @@ export interface MatriculaResult {
  */
 export async function uploadAndAnalyzeMatricula(
   requestId: string,
-  file: File
+  file: File,
+  consent: boolean
 ): Promise<MatriculaResult> {
+  if (!consent) throw new Error("O consentimento LGPD é obrigatório para processar a matrícula.");
   const session = await ensureAnonSession();
   const uid = session?.user?.id;
   if (!uid) throw new Error("Sessão não encontrada.");
@@ -35,7 +37,7 @@ export async function uploadAndAnalyzeMatricula(
     p_request_id: requestId,
     p_storage_path: path,
     p_filename: file.name,
-    p_consent: true,
+    p_consent: consent,
   });
   if (regErr) throw new Error(regErr.message);
 

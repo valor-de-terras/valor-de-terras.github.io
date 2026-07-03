@@ -120,7 +120,12 @@ export default function RequestDetail({ requestId, currentUserId, onBack }: Prop
     if (!artNumber.trim()) throw new Error("Informe o número da ART para emitir o laudo.");
     let artPdfPath: string | undefined;
     const file = artFileRef.current?.files?.[0];
-    if (file) artPdfPath = await uploadArtPdf(requestId, file);
+    if (file) {
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+      if (!isPdf) throw new Error("O arquivo da ART precisa ser um PDF.");
+      if (file.size > 10 * 1024 * 1024) throw new Error("PDF da ART muito grande (máx. 10 MB).");
+      artPdfPath = await uploadArtPdf(requestId, file);
+    }
     await submitArt(requestId, { artNumber: artNumber.trim(), artPdfPath, narrative, grade, ...consistentFinals() });
     // reflete REPORT_GENERATING antes de gerar o PDF: se a geração falhar, a UI mostra "Gerar PDF"
     await load();

@@ -8,9 +8,21 @@ import styles from "./portal.module.css";
 const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
 function genPassword(): string {
-  const a = "ABCDEFGHJKLMNPQRSTUVWXYZ", b = "abcdefghijkmnpqrstuvwxyz", n = "23456789", s = "!@#$%&*";
-  const pick = (set: string, k: number) => Array.from({ length: k }, () => set[Math.floor(Math.random() * set.length)]).join("");
-  return pick(a, 2) + pick(b, 4) + pick(n, 3) + pick(s, 1);
+  // PRNG criptográfico (senha de conta que emite laudo com ART) e sem padrão
+  // posicional: 14 chars aleatórios com as 4 classes garantidas
+  const classes = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789", "!@#$%&*"];
+  const pool = classes.join("");
+  const rand = (n: number) => {
+    const buf = new Uint32Array(1);
+    const lim = Math.floor(0x100000000 / n) * n; // rejeição: evita viés de módulo
+    let x: number;
+    do { crypto.getRandomValues(buf); x = buf[0]; } while (x >= lim);
+    return x % n;
+  };
+  for (;;) {
+    const pwd = Array.from({ length: 14 }, () => pool[rand(pool.length)]).join("");
+    if (classes.every((set) => [...pwd].some((c) => set.includes(c)))) return pwd;
+  }
 }
 
 function isExpired(d: string | null): boolean {

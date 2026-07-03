@@ -10,9 +10,11 @@ permissions:
   pages: write
   id-token: write
 
+# cancel-in-progress: site estático; um push novo deve cancelar o deploy antigo.
+# (2026-07-03: re-runs empilhados do mesmo SHA travaram o Pages por horas)
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:

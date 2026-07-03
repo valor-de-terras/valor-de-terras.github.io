@@ -326,6 +326,8 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
   const cvPct = est.cv != null ? Number(est.cv) * 100 : null;
   const nSan = est.n_sanitized != null ? Number(est.n_sanitized) : null;
   const nOut = est.n_outliers != null ? Number(est.n_outliers) : null;
+  const ic80Low = est.ic80_low != null ? Number(est.ic80_low) : null;
+  const ic80High = est.ic80_high != null ? Number(est.ic80_high) : null;
 
   const total = Number(rep.final_total ?? est.total_avg ?? 0);
   const areaHa = Number(prop.area_ha ?? 0);
@@ -466,7 +468,10 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     statTxt += ` Saneamento por critério de Chauvenet: ${nSan} dado(s) mantido(s)${nOut ? `, ${nOut} excluído(s)` : ", nenhum excluído"}.`;
   }
   if (precisao) {
-    statTxt += ` Intervalo de confiança de 80% (t de Student)${cvPct != null ? `, CV ${cvPct.toFixed(1)}%` : ""}; Grau de Precisão ${precisao} conforme NBR 14.653.`;
+    const icTxt = ic80Low != null && ic80High != null
+      ? `: ${fmtBRL(ic80Low)} a ${fmtBRL(ic80High)} (valor total)`
+      : "";
+    statTxt += ` Intervalo de confiança de 80% (t de Student)${icTxt}${cvPct != null ? `, CV ${cvPct.toFixed(1)}%` : ""}; Grau de Precisão ${precisao} conforme NBR 14.653.`;
   }
   doc.paragraph(statTxt, { size: 8.5, color: MUTED });
 

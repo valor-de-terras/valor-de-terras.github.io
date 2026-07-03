@@ -67,14 +67,17 @@ Deno.serve(async (req: Request) => {
     contentType: "application/pdf",
     upsert: true,
   });
-  if (up.error) return jsonResponse({ error: "Falha ao gravar o PDF: " + up.error.message }, origin, 400);
+  if (up.error) {
+    console.error("report pdf upload failed:", up.error.message);
+    return jsonResponse({ error: "Falha ao gravar o PDF do laudo." }, origin, 400);
+  }
 
   // 5) finaliza (REPORT_GENERATING -> DELIVERED) com o JWT do engenheiro (trava de responsável + caminho)
   const { error: fErr } = await user.rpc("finalize_report_delivery", {
     p_request_id: requestId,
     p_report_pdf_path: path,
   });
-  if (fErr) return jsonResponse({ error: fErr.message, path }, origin, 400);
+  if (fErr) return jsonResponse({ error: fErr.message }, origin, 400);
 
   // 6) URL assinada para visualização imediata (service role)
   const { data: signed } = await admin.storage.from("report-pdfs").createSignedUrl(path, 3600);

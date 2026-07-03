@@ -27,6 +27,7 @@ import json
 import os
 import re
 import sys
+import time
 import unicodedata
 import urllib.request
 
@@ -64,7 +65,7 @@ def to_num(s):
         return None
 
 
-def listing_kind_of(modalidade: str) -> str:
+def listing_kind_of(modalidade: str) -> str | None:
     m = norm_muni(modalidade)
     if "leilao" in m:
         return "leilao_sfi"
@@ -90,12 +91,26 @@ def parse_desc(desc: str):
     return tipo, area_total, area_terreno
 
 
-def fetch_csv(uf: str) -> str:
+def fetch_csv(uf: str, attempts: int = 3) -> str:
     url = CSV_URL.format(uf=uf.upper())
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=90) as resp:
-        raw = resp.read()
-    return raw.decode("latin-1")  # fonte é latin-1; vira str Unicode (acentos ok)
+    last: Exception | None = None
+    for i in range(1, attempts + 1):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                raw = resp.read()
+            return raw.decode("latin-1")  # fonte é latin-1; vira str Unicode (acentos ok)
+        except Exception as e:
+            # erro transitório (rede/timeout/5xx) não pode custar o snapshot do dia:
+            # backoff simples e tenta de novo
+            last = e
+            if i < attempts:
+                wait = 5 * i
+                # stdout de propósito: stderr vira erro TERMINANTE no PowerShell 5.1
+                # (EAP=Stop + pipeline) e mataria o processo antes do retry
+                print(f"[{uf}] tentativa {i} falhou ({e}); nova tentativa em {wait}s")
+                time.sleep(wait)
+    raise RuntimeError(f"download falhou após {attempts} tentativas: {last}")
 
 
 def parse_listing(text: str):
@@ -258,17 +273,26 @@ def main():
         try:
             text = fetch_csv(uf)
         except Exception as e:
-            print(f"[{uf}] falha ao baixar: {e}", file=sys.stderr)
+            print(f"[{uf}] falha ao baixar: {e}")
             continue
         n_uf = 0
-        for d in parse_listing(text):
-            rec = normalize(d)
-            if not rec:
-                continue
-            if args.rural_only and not rec["rural"]:
-                continue
-            records.append(rec)
-            n_uf += 1
+        uf_records = []
+        try:
+            for d in parse_listing(text):
+                rec = normalize(d)
+                if not rec:
+                    continue
+                if args.rural_only and not rec["rural"]:
+                    continue
+                uf_records.append(rec)
+                n_uf += 1
+        except Exception as e:
+            # uma UF com CSV malformado não derruba a coleta das demais; os parciais
+            # são descartados: upsert parcial faria mark_missing_listings marcar a
+            # cauda não parseada como 'inativo' (falso sinal de venda)
+            print(f"[{uf}] falha ao parsear; {n_uf} registros parciais descartados: {e}")
+            continue
+        records.extend(uf_records)
         print(f"[{uf}] {n_uf} registros")
 
     total = len(records)

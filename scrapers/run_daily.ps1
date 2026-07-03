@@ -6,9 +6,10 @@
 # Seguranca: a service_role e lida do keyring do Supabase CLI em tempo de execucao -> nao
 # fica armazenada em disco, no git, nem em CI publico. Requer login previo: `npx supabase login`.
 #
-# Agendar (uma vez, no seu usuario):
+# Agendar (uma vez, no seu usuario) - use o CAMINHO ABSOLUTO do script:
+# %~dp0 so expande dentro de .bat/.cmd; num console interativo viraria literal.
 #   schtasks /Create /TN "ValorDeTerras-ScrapeCaixa" /SC DAILY /ST 08:00 ^
-#     /TR "powershell -NoProfile -ExecutionPolicy Bypass -File \"%~dp0run_daily.ps1\""
+#     /TR "powershell -NoProfile -ExecutionPolicy Bypass -File \"E:\UPWORK\01-CONTRACTS\valor-de-terras\scrapers\run_daily.ps1\""
 $ErrorActionPreference = "Stop"
 $env:SUPABASE_URL = "https://ejwzqrrudgweglxkktan.supabase.co"
 $out = (npx supabase projects api-keys --project-ref ejwzqrrudgweglxkktan -o env 2>$null | Out-String)
@@ -19,7 +20,10 @@ if ($out -match '(?im)SERVICE_ROLE[A-Z_]*\s*=\s*"?([A-Za-z0-9._\-]+)') {
   exit 1
 }
 # Log diário + propagação do exit code (sem isso a Scheduled Task reporta 0x0
-# mesmo com falha e dias perdidos de snapshot passam despercebidos)
+# mesmo com falha e dias perdidos de snapshot passam despercebidos).
+# EAP Continue: no PowerShell 5.1 (o do schtasks), stderr do Python dentro de um
+# pipeline com EAP Stop vira NativeCommandError TERMINANTE e mata o scraper no meio.
+$ErrorActionPreference = "Continue"
 $log = Join-Path $PSScriptRoot ("scrape-" + (Get-Date -Format "yyyy-MM-dd") + ".log")
 py -3 -X utf8 "$PSScriptRoot\caixa_imoveis.py" --uf PR --upsert 2>&1 | Tee-Object -FilePath $log
 exit $LASTEXITCODE

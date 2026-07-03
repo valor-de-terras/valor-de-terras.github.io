@@ -104,7 +104,8 @@ async function queryCarUf(
     `&SRS=EPSG:4326&BBOX=${bbox}&WIDTH=101&HEIGHT=101&X=50&Y=50` +
     `&INFO_FORMAT=application/json&FEATURE_COUNT=1&BUFFER=10`;
   const res = await fetch(url, { signal });
-  if (!res.ok) return null;
+  // erro do servidor não é "sem imóvel aqui": propaga para a UI diferenciar
+  if (!res.ok) throw new Error(`SICAR HTTP ${res.status}`);
   const fc = await res.json();
   const f = fc?.features?.[0];
   if (!f || !f.geometry) return null;
@@ -124,13 +125,22 @@ export async function fetchCarAtPoint(
   lat: number,
   signal?: AbortSignal
 ): Promise<CarHit | null> {
+  // null = consultou e não há imóvel; erro = nenhuma UF respondeu (rede/CORS/5xx),
+  // para a UI não afirmar "nenhum imóvel aqui" quando a consulta falhou
+  let anyOk = false;
+  let lastErr: unknown = null;
   for (const uf of candidateUfs(lng, lat)) {
     try {
       const hit = await queryCarUf(lng, lat, uf, signal);
+      anyOk = true;
       if (hit) return hit;
     } catch (e) {
       if ((e as Error)?.name === "AbortError") throw e;
+      lastErr = e;
     }
+  }
+  if (!anyOk && lastErr) {
+    throw lastErr instanceof Error ? lastErr : new Error("Falha ao consultar o SICAR.");
   }
   return null;
 }
@@ -139,14 +149,15 @@ export async function fetchCarAtPoint(
 const MUNI_BASE: Record<string, number> = {
   guarapuava: 62000, castro: 88000, "ponta grossa": 84000, cascavel: 105000,
   "campo mourao": 98000, londrina: 112000, maringa: 115000, toledo: 108000,
-  "pato branco": 76000, "francisco beltrao": 72000, "guarapuava ": 62000,
+  "pato branco": 76000, "francisco beltrao": 72000,
 };
 const UF_BASE: Record<string, number> = {
   PR: 75000, SC: 82000, RS: 70000, SP: 95000, MS: 48000, MT: 42000, GO: 52000, MG: 58000,
 };
 
 export function municipioBasePrice(municipio: string, uf: string): number {
-  const key = municipio.trim().toLowerCase();
+  // SICAR devolve municípios acentuados (Maringá, Campo Mourão); as chaves são sem acento
+  const key = municipio.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   return MUNI_BASE[key] ?? UF_BASE[uf.toUpperCase()] ?? 60000;
 }
 

@@ -39,7 +39,10 @@ Deno.serve(async (req: Request) => {
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
   const { data: signed, error: sErr } = await admin.storage.from("report-pdfs").createSignedUrl(path, 3600);
-  if (sErr) return jsonResponse({ error: sErr.message }, origin, 400);
+  if (sErr) {
+    console.error("signed url failed:", sErr.message);
+    return jsonResponse({ error: "Falha ao gerar o link do laudo." }, origin, 400);
+  }
 
   return jsonResponse({ ok: true, url: signed?.signedUrl ?? null, path }, origin);
 });

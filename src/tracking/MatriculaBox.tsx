@@ -8,14 +8,29 @@ export default function MatriculaBox({ requestId }: { requestId: string }) {
   const [err, setErr] = useState<string | null>(null);
   const [result, setResult] = useState<MatriculaResult | null>(null);
 
-  const onFile = async (file: File | undefined) => {
+  const MAX_MB = 20;
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // reseta o input já aqui: re-selecionar o MESMO arquivo após uma falha
+    // precisa disparar onChange de novo (senão o retry fica morto)
+    e.target.value = "";
     if (!file) return;
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (!isPdf) {
+      setErr("Envie a matrícula em PDF.");
+      return;
+    }
+    if (file.size > MAX_MB * 1024 * 1024) {
+      setErr(`Arquivo muito grande (máx. ${MAX_MB} MB).`);
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
-      setResult(await uploadAndAnalyzeMatricula(requestId, file));
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Falha ao analisar a matrícula.");
+      setResult(await uploadAndAnalyzeMatricula(requestId, file, consent));
+    } catch (err2) {
+      setErr(err2 instanceof Error ? err2.message : "Falha ao analisar a matrícula.");
     } finally {
       setBusy(false);
     }
@@ -59,7 +74,7 @@ export default function MatriculaBox({ requestId }: { requestId: string }) {
           accept="application/pdf"
           disabled={!consent || busy}
           style={{ display: "none" }}
-          onChange={(e) => void onFile(e.target.files?.[0])}
+          onChange={(e) => void onFile(e)}
         />
       </label>
       {err && <p className={styles.err}>{err}</p>}

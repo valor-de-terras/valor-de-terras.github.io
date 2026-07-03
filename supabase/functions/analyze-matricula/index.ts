@@ -52,8 +52,9 @@ Deno.serve(async (req: Request) => {
     const res = await extractText(pdf, { mergePages: true });
     text = Array.isArray(res.text) ? res.text.join("\n") : String(res.text ?? "");
   } catch (e) {
+    console.error("pdf text extraction failed:", String(e));
     return jsonResponse(
-      { error: "Não foi possível extrair texto (matrícula pode ser imagem/escaneada; OCR não disponível)", detail: String(e) },
+      { error: "Não foi possível extrair texto (matrícula pode ser imagem/escaneada; OCR não disponível)" },
       origin,
       422,
     );
@@ -82,7 +83,10 @@ Deno.serve(async (req: Request) => {
     })
     .select("id")
     .single();
-  if (insErr) return jsonResponse({ error: insErr.message }, origin, 400);
+  if (insErr) {
+    console.error("analysis insert failed:", insErr.message);
+    return jsonResponse({ error: "Falha ao salvar a análise da matrícula." }, origin, 400);
+  }
 
   return jsonResponse(
     {
