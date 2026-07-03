@@ -29,7 +29,7 @@ export default function LiquidityPanel({ data }: { data: Liquidity | null }) {
       {mature ? (
         <div className={styles.metrics}>
           <div className={styles.metric}>
-            <span className={styles.mLabel}>Tempo típico de venda</span>
+            <span className={styles.mLabel}>Tempo no mercado (mediana)</span>
             <span className={styles.mValue}>{tempo}</span>
           </div>
           <div className={styles.metric}>
@@ -41,13 +41,14 @@ export default function LiquidityPanel({ data }: { data: Liquidity | null }) {
         </div>
       ) : (
         <p className={styles.forming}>
-          Base de <strong>{data.n} anúncios</strong> em coleta diária. O tempo típico de venda
-          (iliquidez) da região aparece aqui conforme o histórico dos anúncios amadurece.
+          Base de <strong>{data.n} anúncios</strong> em coleta diária. O tempo mediano no
+          mercado (sinal de iliquidez) da região aparece aqui conforme o histórico amadurece.
         </p>
       )}
 
       <p className={styles.note}>
-        Indicador de mercado da região a partir de anúncios públicos (imóveis à venda). Não é o
+        Indicador de mercado da região a partir de anúncios públicos (imóveis à venda). A mediana
+        inclui anúncios ainda ativos, então o tempo real até vender tende a ser maior. Não é o
         valor do imóvel; ajuda a entender a facilidade de vender na localidade.
       </p>
     </section>

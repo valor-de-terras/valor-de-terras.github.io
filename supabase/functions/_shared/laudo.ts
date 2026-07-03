@@ -315,7 +315,9 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
 
   const reqId = String(req.id ?? "");
   const shortId = reqId.slice(0, 8).toUpperCase();
-  const grade = String(rep.grade ?? "II");
+  // Grau de Fundamentação é enquadramento do responsável técnico; sem ele o laudo
+  // não afirma grau nenhum (nada de default silencioso)
+  const grade = rep.grade ? String(rep.grade) : "";
   const artNumber = String(rep.art_number ?? "");
   const genAt = new Date().toISOString();
   const modelVersion = String(est.model_version ?? "homog-nbr-0.5.0");
@@ -332,9 +334,16 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     ? total / areaHa
     : Number(rep.final_price_per_ha ?? est.price_per_ha_avg ?? 0);
 
-  // Campo de arbítrio ±15% (NBR 14.653) em torno do valor concluído.
-  const totalMin = total * 0.85;
-  const totalMax = total * 1.15;
+  // Campo de arbítrio (NBR 14.653): ±15% em torno da estimativa central do MODELO
+  // (persistido pelo motor), nunca do valor concluído - senão o arbitrado jamais
+  // cai fora do próprio campo.
+  const estTotalAvg = Number(est.total_avg ?? 0);
+  const totalMin = est.arbitrio_low != null
+    ? Number(est.arbitrio_low)
+    : (estTotalAvg > 0 ? estTotalAvg * 0.85 : total * 0.85);
+  const totalMax = est.arbitrio_high != null
+    ? Number(est.arbitrio_high)
+    : (estTotalAvg > 0 ? estTotalAvg * 1.15 : total * 1.15);
 
   const locality = `${prop.municipality ?? "-"}${prop.uf ? "/" + prop.uf : ""}`;
   const purposeKey = String(req.purpose ?? "outro");
@@ -359,7 +368,9 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
   doc.y = PH - 172;
   // faixa do grau
   p.drawRectangle({ x: M, y: doc.y - 26, width: PW - 2 * M, height: 30, color: BG, borderColor: LINE, borderWidth: 1 });
-  let fundTxt = `Fundamentação NBR 14.653-3: Grau ${grade}`;
+  let fundTxt = grade
+    ? `Fundamentação NBR 14.653-3: Grau ${grade}`
+    : "Fundamentação NBR 14.653-3: a enquadrar pelo responsável técnico";
   if (precisao) fundTxt += ` - Precisão Grau ${precisao}`;
   if (cvPct != null) fundTxt += ` - CV ${cvPct.toFixed(1)}%`;
   p.drawText(san(fundTxt), { x: M + 10, y: doc.y - 15, size: 9, font: doc.bold, color: BRAND });
@@ -451,7 +462,7 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     ["l", "r", "r", "l", "r", "r"]
   );
   let statTxt = `Comparativos utilizados: ${comps.length}. Fonte predominante: ${String(comps[0]?.source ?? "DERAL/SEAB-PR")}.`;
-  if (nSan != null) {
+  if (nSan != null && comps.length >= 3) {
     statTxt += ` Saneamento por critério de Chauvenet: ${nSan} dado(s) mantido(s)${nOut ? `, ${nOut} excluído(s)` : ", nenhum excluído"}.`;
   }
   if (precisao) {
@@ -470,8 +481,16 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
   doc.page.drawText(fmtBRL(total), { x: M + 14, y: boxY + 4, size: 20, font: doc.bold, color: BRAND });
   const rangeTxt = san(`Campo de arbítrio: ${fmtBRL(totalMin)} a ${fmtBRL(totalMax)}`);
   doc.page.drawText(rangeTxt, { x: PW - M - 14 - doc.font.widthOfTextAtSize(rangeTxt, 9), y: boxY + 10, size: 9, font: doc.font, color: MUTED });
-  doc.page.drawText(san(`Grau ${grade}`), { x: PW - M - 14 - doc.bold.widthOfTextAtSize(san(`Grau ${grade}`), 11), y: boxY + 56, size: 11, font: doc.bold, color: ACCENT });
+  if (grade) {
+    doc.page.drawText(san(`Grau ${grade}`), { x: PW - M - 14 - doc.bold.widthOfTextAtSize(san(`Grau ${grade}`), 11), y: boxY + 56, size: 11, font: doc.bold, color: ACCENT });
+  }
   doc.y = boxY - 14;
+  if (total > 0 && totalMax > 0 && (total < totalMin || total > totalMax)) {
+    doc.paragraph(
+      "Atenção: o valor concluído está fora do campo de arbítrio da estimativa central (NBR 14.653); a justificativa deve constar do parecer do responsável técnico.",
+      { size: 8.5, color: MUTED }
+    );
+  }
   const narrative = String(rep.narrative ?? "");
   if (narrative.trim()) {
     doc.paragraph("Parecer do responsável técnico:", { font: doc.bold, size: 9.5, gap: 2 });

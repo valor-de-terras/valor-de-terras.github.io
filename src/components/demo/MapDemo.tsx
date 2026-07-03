@@ -67,6 +67,9 @@ export default function MapDemo() {
   const [liquidity, setLiquidity] = useState<Liquidity | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const timersRef = useRef<number[]>([]);
+  // geração do pipeline: respostas de um run antigo (backend incancelável)
+  // não podem sobrescrever o estado de um imóvel selecionado depois
+  const runGenRef = useRef(0);
   const carAbortRef = useRef<AbortController | null>(null);
   const geoAbortRef = useRef<AbortController | null>(null);
 
@@ -76,6 +79,7 @@ export default function MapDemo() {
   };
 
   const reset = useCallback(() => {
+    runGenRef.current++;
     clearTimers();
     carAbortRef.current?.abort();
     carAbortRef.current = null;
@@ -97,6 +101,7 @@ export default function MapDemo() {
   }, []);
 
   const adoptParcel = useCallback((feature: ParsedGeo, m: Meta) => {
+    runGenRef.current++;
     clearTimers();
     setError(null);
     setResult(null);
@@ -232,6 +237,7 @@ export default function MapDemo() {
 
   const runPipeline = () => {
     if (!parcel || !meta || status === "enriching") return;
+    const gen = ++runGenRef.current;
     clearTimers();
     setStatus("enriching");
     setActiveLayers(0);
@@ -246,6 +252,7 @@ export default function MapDemo() {
     }
 
     const finishLocal = () => {
+      if (gen !== runGenRef.current) return;
       const r = computeEstimate(parcel, meta.basePricePerHa, ENRICHMENT_LAYERS);
       setResult({ ...r, layers: ENRICHMENT_LAYERS });
       setLiveLayers(ENRICHMENT_LAYERS);
@@ -270,6 +277,7 @@ export default function MapDemo() {
 
     Promise.race([backendCall, timeout])
       .then((r) => {
+        if (gen !== runGenRef.current) return;
         clearTimers();
         setLiveLayers(r.layers);
         setResult({
@@ -285,6 +293,7 @@ export default function MapDemo() {
         setStatus("done");
       })
       .catch(() => {
+        if (gen !== runGenRef.current) return;
         // fallback offline: motor client-side (mantém o site funcional sem o backend)
         clearTimers();
         const t = window.setTimeout(finishLocal, STEP_MS * 2);

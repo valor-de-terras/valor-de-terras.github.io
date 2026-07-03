@@ -28,51 +28,66 @@ function haversineKm(a: Position, b: Position): number {
   return (2 * EARTH_R * Math.asin(Math.sqrt(h))) / 1000;
 }
 
-/** Extrai todos os anéis de polígono de uma geometria. */
-function collectPolygons(geom: Geometry): Position[][] {
-  if (geom.type === "Polygon") return geom.coordinates;
-  if (geom.type === "MultiPolygon") return geom.coordinates.flat();
-  if (geom.type === "GeometryCollection")
-    return geom.geometries.flatMap(collectPolygons);
+/** Todas as geometrias de um Feature/FeatureCollection (na ordem original). */
+function collectGeometries(input: Feature<Geometry> | FeatureCollection): Geometry[] {
+  if (input.type === "Feature") return input.geometry ? [input.geometry] : [];
+  if (input.type === "FeatureCollection")
+    return input.features.filter((f) => f.geometry).map((f) => f.geometry);
   return [];
 }
 
+/** Polígonos de uma geometria, cada um como lista de anéis (externo primeiro). */
+function collectPolygonCoords(geom: Geometry): Position[][][] {
+  if (geom.type === "Polygon") return [geom.coordinates];
+  if (geom.type === "MultiPolygon") return geom.coordinates;
+  if (geom.type === "GeometryCollection")
+    return geom.geometries.flatMap(collectPolygonCoords);
+  return [];
+}
+
+/** Extrai todos os anéis de polígono de uma geometria. */
+function collectPolygons(geom: Geometry): Position[][] {
+  return collectPolygonCoords(geom).flat();
+}
+
+/** Área de um polígono: anel externo menos os buracos. */
+function polygonAreaM2(coords: Position[][]): number {
+  if (!coords.length) return 0;
+  let m2 = ringAreaM2(coords[0]);
+  for (let i = 1; i < coords.length; i++) m2 -= ringAreaM2(coords[i]);
+  return Math.max(0, m2);
+}
+
+function hasPolygon(g: Geometry): boolean {
+  if (g.type === "Polygon" || g.type === "MultiPolygon") return true;
+  if (g.type === "GeometryCollection") return g.geometries.some(hasPolygon);
+  return false;
+}
+
+/** Primeira geometria poligonal; se não houver, a primeira geometria qualquer.
+ *  (KML/SHP costumam trazer um Placemark de ponto antes do talhão.) */
 export function firstGeometry(
   input: Feature<Geometry> | FeatureCollection
 ): Geometry | null {
-  if (input.type === "Feature") return input.geometry;
-  if (input.type === "FeatureCollection") {
-    const f = input.features.find((x) => x.geometry);
-    return f ? f.geometry : null;
-  }
-  return null;
+  const geoms = collectGeometries(input);
+  return geoms.find(hasPolygon) ?? geoms[0] ?? null;
 }
 
+/** Área total em hectares: soma todos os polígonos de todas as features,
+ *  subtraindo os anéis internos (buracos) de cada um. */
 export function areaHa(input: Feature<Geometry> | FeatureCollection): number {
-  const geom = firstGeometry(input);
-  if (!geom) return 0;
-  const rings = collectPolygons(geom);
-  if (!rings.length) return 0;
-  // anel externo positivo, buracos subtraídos (aproximação: primeiro anel externo)
   let m2 = 0;
-  // para Polygon: ring[0] externo, demais buracos
-  if (geom.type === "Polygon") {
-    m2 = ringAreaM2(geom.coordinates[0]);
-    for (let i = 1; i < geom.coordinates.length; i++)
-      m2 -= ringAreaM2(geom.coordinates[i]);
-  } else {
-    m2 = rings.reduce((acc, r) => acc + ringAreaM2(r), 0);
-  }
-  return Math.max(0, m2 / 10000);
+  for (const geom of collectGeometries(input))
+    for (const poly of collectPolygonCoords(geom)) m2 += polygonAreaM2(poly);
+  return m2 / 10000;
 }
 
 export function perimeterKm(input: Feature<Geometry> | FeatureCollection): number {
-  const geom = firstGeometry(input);
-  if (!geom) return 0;
-  const rings = collectPolygons(geom);
   let km = 0;
-  for (const ring of rings) {
-    for (let i = 0; i < ring.length - 1; i++) km += haversineKm(ring[i], ring[i + 1]);
+  for (const geom of collectGeometries(input)) {
+    for (const ring of collectPolygons(geom)) {
+      for (let i = 0; i < ring.length - 1; i++) km += haversineKm(ring[i], ring[i + 1]);
+    }
   }
   return km;
 }
@@ -80,13 +95,21 @@ export function perimeterKm(input: Feature<Geometry> | FeatureCollection): numbe
 export function centroid(
   input: Feature<Geometry> | FeatureCollection
 ): [number, number] {
-  const geom = firstGeometry(input);
-  if (!geom) return [-51.5, -24.8];
-  const rings = collectPolygons(geom);
-  const ring = rings[0];
-  if (!ring || ring.length < 3) {
-    // fallback: média de todos os vértices
-    const pts = rings.flat();
+  // anel externo do maior polígono entre todas as features
+  let ring: Position[] | null = null;
+  let bestM2 = -1;
+  for (const geom of collectGeometries(input)) {
+    for (const poly of collectPolygonCoords(geom)) {
+      const m2 = polygonAreaM2(poly);
+      if (m2 > bestM2 && poly[0] && poly[0].length >= 3) {
+        bestM2 = m2;
+        ring = poly[0];
+      }
+    }
+  }
+  if (!ring) {
+    // fallback: média de todos os vértices de todos os anéis
+    const pts = collectGeometries(input).flatMap((g) => collectPolygons(g).flat());
     if (!pts.length) return [-51.5, -24.8];
     const sx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
     const sy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
@@ -114,9 +137,7 @@ export function centroid(
 export function bbox(
   input: Feature<Geometry> | FeatureCollection
 ): [number, number, number, number] {
-  const geom = firstGeometry(input);
-  if (!geom) return [-54, -27, -48, -22];
-  const pts = collectPolygons(geom).flat();
+  const pts = collectGeometries(input).flatMap((g) => collectPolygons(g).flat());
   let minX = Infinity,
     minY = Infinity,
     maxX = -Infinity,

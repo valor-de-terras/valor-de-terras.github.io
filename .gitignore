@@ -17,3 +17,7 @@ notes/
 # caches locais (CLI Supabase, incremental do tsc)
 supabase/.temp/
 *.tsbuildinfo
+
+# laudos reais (LGPD) e logs do scraper local — nunca no repo público
+*.pdf
+scrapers/*.log

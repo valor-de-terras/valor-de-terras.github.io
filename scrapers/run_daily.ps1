@@ -18,4 +18,8 @@ if ($out -match '(?im)SERVICE_ROLE[A-Z_]*\s*=\s*"?([A-Za-z0-9._\-]+)') {
   Write-Error "Nao obtive a service_role via 'supabase projects api-keys'. Rode: npx supabase login"
   exit 1
 }
-py -3 -X utf8 "$PSScriptRoot\caixa_imoveis.py" --uf PR --upsert
+# Log diário + propagação do exit code (sem isso a Scheduled Task reporta 0x0
+# mesmo com falha e dias perdidos de snapshot passam despercebidos)
+$log = Join-Path $PSScriptRoot ("scrape-" + (Get-Date -Format "yyyy-MM-dd") + ".log")
+py -3 -X utf8 "$PSScriptRoot\caixa_imoveis.py" --uf PR --upsert 2>&1 | Tee-Object -FilePath $log
+exit $LASTEXITCODE

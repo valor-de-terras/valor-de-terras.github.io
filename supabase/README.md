@@ -39,7 +39,7 @@ Chamáveis via `supabase.rpc(...)` com o JWT do usuário (RLS aplicada):
 | Função | Descrição |
 |--------|-----------|
 | `create_appraisal_request(p_geojson, p_purpose, p_origin, p_car_code, p_municipality, p_uf)` | Cria `Property` (mede área/perímetro/centroide via PostGIS) e o pedido |
-| `run_preliminary_estimate(p_request_id)` | Enriquecimento (stub) + homogeneização NBR + estimativa + comparáveis |
+| `run_estimate_with_enrichment(p_request_id, p_enrichment)` | Enriquecimento + homogeneização + tratamento estatístico NBR (Chauvenet, IC 80%) + comparáveis |
 | `proceed_to_technical_review(p_request_id)` | Cliente solicita o laudo formal com ART |
 | `cancel_request(p_request_id)` | Cancela o pedido |
 | `assign_technical_review(p_request_id)` | Engenheiro assume a revisão (somente equipe técnica) |
@@ -142,7 +142,7 @@ const { data } = await supabase.functions.invoke("appraise", {
 });
 // ou direto via RPC:
 const { data: reqId } = await supabase.rpc("create_appraisal_request", { p_geojson: geojson });
-const { data: est } = await supabase.rpc("run_preliminary_estimate", { p_request_id: reqId });
+const { data: est } = await supabase.rpc("run_estimate_with_enrichment", { p_request_id: reqId });
 ```
 
 > O enriquecimento usa conectores **reais** de dados abertos (relevo/Copernicus, clima/ERA5,

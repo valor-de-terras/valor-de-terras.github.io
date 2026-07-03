@@ -24,6 +24,7 @@ export default function MyRequests() {
   const [rows, setRows] = useState<MyRequestItem[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [download, setDownload] = useState<{ id: string; url: string } | null>(null);
 
   const load = async () => {
     setErr(null);
@@ -42,6 +43,9 @@ export default function MyRequests() {
     setErr(null);
     try {
       const url = await reportLink(id);
+      // popup blockers barram window.open depois de um await; o link abaixo
+      // do botão é o caminho garantido de download
+      setDownload({ id, url });
       window.open(url, "_blank", "noopener");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Falha ao gerar o link do laudo.");
@@ -103,6 +107,15 @@ export default function MyRequests() {
                       )}
                     </div>
                   </div>
+                  {download?.id === r.request_id && (
+                    <div className={styles.meta}>
+                      PDF pronto:{" "}
+                      <a href={download.url} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>
+                        abrir o laudo
+                      </a>{" "}
+                      (se não abriu sozinho, o navegador bloqueou o popup)
+                    </div>
+                  )}
                   {r.status !== "CANCELLED_BY_USER" && (
                     <MatriculaBox requestId={r.request_id} />
                   )}

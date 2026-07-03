@@ -29,10 +29,16 @@ Deno.serve(async (req: Request) => {
   });
   const { data: doc, error: docErr } = await asUser
     .from("matricula_documents")
-    .select("id, request_id, storage_path")
+    .select("id, request_id, storage_path, owner_id")
     .eq("id", body.document_id)
     .single();
   if (docErr || !doc) return jsonResponse({ error: "Documento não encontrado ou sem acesso" }, origin, 403);
+
+  // defesa em profundidade: o download abaixo usa service_role (bypass da RLS de
+  // storage), então o path registrado PRECISA estar no prefixo do dono do documento
+  if (!doc.owner_id || !String(doc.storage_path).startsWith(`${doc.owner_id}/`)) {
+    return jsonResponse({ error: "Caminho de arquivo inválido para este documento" }, origin, 403);
+  }
 
   // service role para baixar o arquivo (bypass RLS de storage) e persistir a análise
   const svc = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
