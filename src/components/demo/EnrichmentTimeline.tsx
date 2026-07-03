@@ -7,6 +7,10 @@ interface Props {
   done: boolean;
 }
 
+// Oculta valores monetários no diagnóstico (ex.: base DERAL "R$ 73.200/ha"): junto com os
+// fatores visíveis, o R$/ha base permitiria reconstruir a estimativa. O valor só no laudo.
+const maskMoney = (s: string) => s.replace(/R\$\s?\d[\d.,]*/g, "R$ •••");
+
 export default function EnrichmentTimeline({ layers, activeCount, done }: Props) {
   return (
     <section className={styles.box} aria-live="polite">
@@ -38,7 +42,7 @@ export default function EnrichmentTimeline({ layers, activeCount, done }: Props)
                   </span>
                   <span className={styles.source}>{l.source}</span>
                 </div>
-                {state === "done" && <p className={styles.result}>{l.result}</p>}
+                {state === "done" && <p className={styles.result}>{maskMoney(l.result)}</p>}
                 {state === "active" && (
                   <p className={styles.loading}>
                     <span className={styles.dot} />
