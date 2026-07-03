@@ -287,6 +287,33 @@
   margin-top: 0.3rem;
 }
 
+.conclusionLocked {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  background: var(--vt-green-900);
+  color: #fff;
+  border-radius: var(--vt-radius);
+  padding: 1.1rem 1.2rem;
+}
+.conclusionLocked strong {
+  display: block;
+  font-family: var(--vt-font-display);
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+}
+.conclusionLocked p {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--vt-green-300);
+  margin: 0;
+}
+.lockGlyph {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex: none;
+}
+
 .warn {
   background: #fbeae6;
   border: 1px solid #f0c8bf;

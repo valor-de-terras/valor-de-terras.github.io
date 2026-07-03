@@ -86,6 +86,47 @@
   margin-top: 0.25rem;
 }
 
+/* Tarja: o valor prévio é ocultado e liberado só no laudo formal */
+.locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: fit-content;
+  margin-top: 0.35rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--vt-radius);
+  border: 1px solid var(--vt-dark-line);
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.12) 9px,
+    rgba(255, 255, 255, 0.04) 9px,
+    rgba(255, 255, 255, 0.04) 18px
+  );
+}
+.lockIcon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.lockText {
+  font-family: var(--vt-font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.lockNote {
+  margin-top: 0.5rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--vt-dark-ink-soft);
+}
+.masked {
+  font-family: var(--vt-font-mono);
+  letter-spacing: 0.14em;
+  color: var(--vt-dark-ink-soft);
+}
+
 .metrics {
   margin-top: 1.2rem;
   display: grid;

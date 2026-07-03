@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { Comparable, EnrichmentLayer, EstimateResult } from "../../types";
-import { fmtArea, fmtBRL, fmtCoord, fmtNum } from "../../lib/format";
+import { fmtArea, fmtCoord, fmtNum } from "../../lib/format";
 import styles from "./ReportPreview.module.css";
 
 interface Meta {
@@ -190,8 +190,8 @@ export default function ReportPreview({
                       <td className={styles.num}>{c.distanceKm} km</td>
                       <td className={styles.num}>{fmtNum(c.areaHa)} ha</td>
                       <td>{c.use}</td>
-                      <td className={styles.num}>{fmtBRL(c.pricePerHa)}</td>
-                      <td className={styles.num}>{fmtBRL(c.homogenizedPricePerHa)}</td>
+                      <td className={styles.num}>•••</td>
+                      <td className={styles.num}>•••</td>
                     </tr>
                   ))}
                 </tbody>
@@ -199,17 +199,16 @@ export default function ReportPreview({
             </Section>
 
             <Section n="6" title="Conclusão — valor de mercado">
-              <div className={styles.conclusion}>
+              <div className={styles.conclusionLocked}>
+                <span className={styles.lockGlyph} aria-hidden>🔒</span>
                 <div>
-                  <span className={styles.cLabel}>Valor unitário (R$/ha)</span>
-                  <span className={styles.cValue}>{fmtBRL(estimate.pricePerHaAvg)}</span>
-                </div>
-                <div className={styles.cMain}>
-                  <span className={styles.cLabel}>Valor total estimado</span>
-                  <span className={styles.cBig}>{fmtBRL(estimate.avg)}</span>
-                  <span className={styles.cRange}>
-                    Campo de arbítrio: {fmtBRL(estimate.min)} a {fmtBRL(estimate.max)}
-                  </span>
+                  <strong>Valor de mercado disponível no laudo formal.</strong>
+                  <p>
+                    O valor unitário (R$/ha), o valor total estimado e o campo de arbítrio são
+                    apresentados no laudo assinado por Engenheiro Agrônomo ou Florestal, com ART.
+                    Esta prévia demonstra a metodologia e a rastreabilidade dos dados; o resultado
+                    monetário integra o documento formal.
+                  </p>
                 </div>
               </div>
             </Section>

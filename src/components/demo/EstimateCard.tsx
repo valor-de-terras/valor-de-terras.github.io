@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Comparable, EstimateResult } from "../../types";
-import { fmtArea, fmtBRL, fmtBRLCompact, fmtNum } from "../../lib/format";
+import { fmtArea, fmtNum } from "../../lib/format";
 import styles from "./EstimateCard.module.css";
 
 interface Props {
@@ -44,16 +44,22 @@ export default function EstimateCard({
 
       <div className={styles.headline}>
         <span className={styles.bigLabel}>Valor total estimado</span>
-        <span className={styles.big}>{fmtBRL(result.avg)}</span>
-        <span className={styles.range}>
-          intervalo {fmtBRLCompact(result.min)} — {fmtBRLCompact(result.max)}
+        <div className={styles.locked} title="O valor é liberado no laudo formal (com ART)">
+          <span className={styles.lockIcon} aria-hidden>🔒</span>
+          <span className={styles.lockText}>Liberado no laudo com ART</span>
+        </div>
+        <span className={styles.lockNote}>
+          A estimativa foi calculada sobre a sua geometria e {result.comparablesUsed} comparáveis.
+          O valor fechado e o intervalo integram o laudo formal, assinado por responsável técnico.
         </span>
       </div>
 
       <div className={styles.metrics}>
         <div className={styles.metric}>
           <span className={styles.mLabel}>R$/ha (médio)</span>
-          <span className={styles.mValue}>{fmtBRL(result.pricePerHaAvg)}</span>
+          <span className={styles.mValue}>
+            <span className={styles.masked} aria-label="disponível no laudo">🔒 •••</span>
+          </span>
         </div>
         <div className={styles.metric}>
           <span className={styles.mLabel}>Área avaliada</span>
@@ -93,8 +99,8 @@ export default function EstimateCard({
                   <td>{c.distanceKm} km</td>
                   <td>{fmtNum(c.areaHa)} ha</td>
                   <td>{c.use}</td>
-                  <td className={styles.num}>{fmtBRL(c.pricePerHa)}</td>
-                  <td className={styles.num}>{fmtBRL(c.homogenizedPricePerHa)}</td>
+                  <td className={styles.num}><span className={styles.masked}>•••</span></td>
+                  <td className={styles.num}><span className={styles.masked}>•••</span></td>
                   <td className={styles.src}>{c.source}</td>
                 </tr>
               ))}
