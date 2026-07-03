@@ -44,10 +44,29 @@ py -3 scrapers/caixa_imoveis.py --uf all --upsert
 
 A CAIXA **não** traz data por anúncio; o arquivo é regenerado todo dia (HTTP
 `Last-Modified` ~01:00 GMT) e cada imóvel tem chave estável (`Nº do imóvel`). Logo:
-rodar **snapshot diário** (cron/GitHub Actions), gravar em `listing_snapshots`, e derivar
+rodar **snapshot diário**, gravar em `listing_snapshots`, e derivar
 `first_seen`/`last_seen`/`dias_ativo`; quando o id some, `status='inativo'` + `removed_at`
 (proxy de venda). O trigger `market_listings_touch` já preserva `first_seen` e recalcula
 `dias_ativo` a cada upsert.
+
+## Automação — precisa de IP residencial (NÃO datacenter)
+
+Descoberta (2026-07-03): o CDN da CAIXA (Azion) **bloqueia IPs de datacenter por ASN**.
+Testado: **GitHub Actions e Supabase Edge Function recebem HTTP 403** (mesmo servido de
+São Paulo). Só um **IP residencial** baixa o CSV. Portanto a coleta roda **localmente**.
+
+`scrapers/run_daily.ps1` faz a coleta lendo a `service_role` do **keyring do Supabase CLI
+em tempo de execução** (nada armazenado em disco, git ou CI público; requer
+`npx supabase login`). Agendado no Windows (Agendador de Tarefas):
+
+```powershell
+schtasks /Create /TN "ValorDeTerras-ScrapeCaixa" /SC DAILY /ST 08:00 /F `
+  /TR '"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "E:\UPWORK\01-CONTRACTS\valor-de-terras\scrapers\run_daily.ps1"'
+# remover:  schtasks /Delete /TN "ValorDeTerras-ScrapeCaixa" /F
+```
+
+Alternativas para tirar da máquina local no futuro: um VPS/proxy com IP residencial BR, ou
+uma fonte que não bloqueie datacenter (ex.: Mega Leilões) via Edge Function + pg_cron.
 
 ## Guardrails legais (obrigatórios ao escalar)
 

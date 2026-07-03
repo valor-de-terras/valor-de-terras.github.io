@@ -280,6 +280,8 @@ def main():
         return
 
     if args.upsert:
+        if total == 0:
+            sys.exit("ERRO: nenhum registro coletado (a fonte pode ter bloqueado o IP). Upsert abortado.")
         print(f"\nGravando {total} registros no Supabase...")
         n = load(records, uf=",".join(ufs))
         print(f"OK: {n} registros gravados (market_listings + listing_snapshots).")
