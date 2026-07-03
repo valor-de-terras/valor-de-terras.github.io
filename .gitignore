@@ -21,3 +21,6 @@ supabase/.temp/
 # laudos reais (LGPD) e logs do scraper local — nunca no repo público
 *.pdf
 scrapers/*.log
+
+# bytecode do python (teste local do scraper)
+__pycache__/
