@@ -231,6 +231,13 @@ def load(records, source="caixa", uf=None, batch=200):
     if run_id:
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
         _rest(url, key, f"scrape_runs?id=eq.{run_id}", "PATCH", {"finished_at": now_iso}, "return=minimal")
+
+    # recalcula o agregado de liquidez (Frente C)
+    try:
+        _rest(url, key, "rpc/refresh_liquidity_stats", "POST", {}, "return=minimal")
+        print("  liquidity_stats atualizado")
+    except Exception as e:
+        print(f"  (aviso) refresh_liquidity_stats falhou: {e}")
     return total
 
 

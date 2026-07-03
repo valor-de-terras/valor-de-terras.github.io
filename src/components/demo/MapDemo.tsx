@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import MapView from "./MapView";
 import EnrichmentTimeline from "./EnrichmentTimeline";
 import EstimateCard from "./EstimateCard";
+import LiquidityPanel from "./LiquidityPanel";
 import ReportPreview from "./ReportPreview";
 import RequestReportModal from "./RequestReportModal";
+import { getLiquidity, type Liquidity } from "../../lib/liquidity";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
 import { areaHa } from "../../lib/geo";
 import { fetchCarAtPoint, municipioBasePrice, geocodeMunicipioPR } from "../../lib/sicar";
@@ -62,6 +64,7 @@ export default function MapDemo() {
   const [carTarget, setCarTarget] = useState<[number, number] | null>(null);
   const [carGeoLoading, setCarGeoLoading] = useState(false);
   const [carGeoError, setCarGeoError] = useState<string | null>(null);
+  const [liquidity, setLiquidity] = useState<Liquidity | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const timersRef = useRef<number[]>([]);
   const carAbortRef = useRef<AbortController | null>(null);
@@ -89,6 +92,7 @@ export default function MapDemo() {
     setLiveLayers(ENRICHMENT_LAYERS);
     setBackendUsed(false);
     setRequestId(null);
+    setLiquidity(null);
     setError(null);
   }, []);
 
@@ -289,6 +293,18 @@ export default function MapDemo() {
   };
 
   useEffect(() => () => clearTimers(), []);
+
+  // Frente C: busca o sinal de liquidez da região quando a estimativa conclui.
+  useEffect(() => {
+    if (status !== "done" || !result || !meta) return;
+    let alive = true;
+    getLiquidity(meta.municipality, meta.uf, result.area, true).then((l) => {
+      if (alive) setLiquidity(l);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [status, result, meta]);
 
   const compMarkers =
     result && status === "done"
@@ -515,6 +531,8 @@ export default function MapDemo() {
               onRequestReport={() => setReportRequestOpen(true)}
             />
           )}
+
+          {status === "done" && liquidity && <LiquidityPanel data={liquidity} />}
         </div>
       </div>
 
