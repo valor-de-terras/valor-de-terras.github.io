@@ -27,17 +27,18 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    env:
+      # secrets.* não pode ir no `if:` de um step; expõe como env do job e checa env.* no if.
+      SUPABASE_URL: https://ejwzqrrudgweglxkktan.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Snapshot diário (upsert)
-        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
-        env:
-          SUPABASE_URL: https://ejwzqrrudgweglxkktan.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: python scrapers/caixa_imoveis.py --uf "${{ github.event.inputs.uf || 'PR' }}" --upsert
       - name: Aviso se não ativado
-        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY == '' }}
+        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY == '' }}
         run: echo "Segredo SUPABASE_SERVICE_ROLE_KEY ausente; coleta pulada. Ative com 'gh secret set'."
