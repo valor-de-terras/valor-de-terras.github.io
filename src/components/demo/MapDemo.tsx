@@ -152,6 +152,12 @@ export default function MapDemo() {
       carAbortRef.current = ctrl;
       setError(null);
       setCarLoading(true);
+      // SICAR pode estar lento: limita a consulta do clique a 20s para não travar.
+      let timedOut = false;
+      const to = window.setTimeout(() => {
+        timedOut = true;
+        ctrl.abort();
+      }, 20000);
       try {
         const hit = await fetchCarAtPoint(lng, lat, ctrl.signal);
         if (ctrl.signal.aborted) return;
@@ -173,10 +179,15 @@ export default function MapDemo() {
           origin: "car",
         });
       } catch (e) {
-        if ((e as Error)?.name !== "AbortError") {
+        if (timedOut) {
+          setError(
+            "O servidor do SICAR está lento agora. Tente clicar novamente em instantes."
+          );
+        } else if ((e as Error)?.name !== "AbortError") {
           setError("Falha ao consultar o SICAR. Verifique a conexão e tente novamente.");
         }
       } finally {
+        window.clearTimeout(to);
         if (carAbortRef.current === ctrl) {
           setCarLoading(false);
           carAbortRef.current = null;

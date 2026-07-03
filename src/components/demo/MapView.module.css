@@ -65,9 +65,14 @@
   z-index: 2;
   pointer-events: none;
 }
+.tilesBadgeSlow {
+  background: rgba(140, 90, 20, 0.94);
+  max-width: min(80%, 340px);
+}
 .tilesSpin {
   width: 12px;
   height: 12px;
+  flex: none;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.35);
   border-top-color: #fff;

@@ -116,6 +116,7 @@ export default function MapView({
   const ufRef = useRef("pr");
   const [basemap, setBasemap] = useState<"carto" | "esri">("carto");
   const [tilesLoading, setTilesLoading] = useState(false);
+  const [slowTiles, setSlowTiles] = useState(false);
 
   clickCbRef.current = onMapClick;
   enableRef.current = enableClick;
@@ -201,6 +202,17 @@ export default function MapView({
     else map.once("load", apply);
   }, [carTarget]);
 
+  // SICAR lento (servidor do governo costuma demorar): após 10s carregando, avisa que
+  // o clique já funciona mesmo sem os polígonos aparecerem.
+  useEffect(() => {
+    if (!(carOverlay && tilesLoading)) {
+      setSlowTiles(false);
+      return;
+    }
+    const t = window.setTimeout(() => setSlowTiles(true), 10000);
+    return () => window.clearTimeout(t);
+  }, [carOverlay, tilesLoading]);
+
   // basemap toggle
   useEffect(() => {
     const map = mapRef.current;
@@ -259,8 +271,14 @@ export default function MapView({
     <div className={styles.wrap}>
       <div ref={containerRef} className={styles.map} aria-label="Mapa interativo do imóvel" />
       {carOverlay && tilesLoading && (
-        <div className={styles.tilesBadge} role="status">
-          <span className={styles.tilesSpin} /> carregando imóveis CAR…
+        <div
+          className={slowTiles ? `${styles.tilesBadge} ${styles.tilesBadgeSlow}` : styles.tilesBadge}
+          role="status"
+        >
+          <span className={styles.tilesSpin} />
+          {slowTiles
+            ? "SICAR lento agora — você já pode clicar no imóvel"
+            : "carregando imóveis CAR…"}
         </div>
       )}
       <div className={styles.basemapToggle} role="group" aria-label="Tipo de mapa">
