@@ -104,3 +104,36 @@ export function getCompliance(
   if (!Number.isFinite(lon) || !Number.isFinite(lat)) return Promise.resolve(null);
   return callRpc<Compliance>("get_compliance", { p_lon: lon, p_lat: lat, p_geojson: geometry });
 }
+
+export interface AtividadeViab {
+  cadeia: string;
+  label: string;
+  score: number;
+  acesso: number | null;
+  aptidao: number;
+  destino: string | null;
+  destino_municipio: string | null;
+  destino_km: number | null;
+  preco: { produto: string; preco: number; unidade: string; ref_month: string } | null;
+  nota: string | null;
+}
+export interface Viability {
+  available: boolean;
+  atividades?: AtividadeViab[];
+  regional?: string | null;
+  criterio?: string;
+  fonte?: string;
+}
+
+export function getViability(
+  lon: number,
+  lat: number,
+  municipality?: string
+): Promise<Viability | null> {
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return Promise.resolve(null);
+  return callRpc<Viability>("get_viability", {
+    p_lon: lon,
+    p_lat: lat,
+    p_municipio: municipality ?? null,
+  });
+}

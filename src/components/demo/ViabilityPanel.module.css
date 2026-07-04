@@ -1,0 +1,85 @@
+.panel {
+  background: var(--vt-paper);
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius-lg);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--vt-shadow-sm);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+.badge {
+  font-family: var(--vt-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--vt-green-600, #2f6b3f);
+  padding: 0.26rem 0.6rem;
+  border-radius: 999px;
+}
+.scope {
+  font-size: 0.76rem;
+  color: var(--vt-ink-faint);
+}
+
+.rows {
+  display: grid;
+  gap: 0.7rem;
+}
+.row {
+  background: var(--vt-paper-2);
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius);
+  padding: 0.6rem 0.8rem;
+}
+.rowTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--vt-ink);
+}
+.grade {
+  font-size: 0.74rem;
+  color: var(--vt-ink-soft);
+}
+.bar {
+  margin: 0.4rem 0 0.35rem;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--vt-line);
+  overflow: hidden;
+}
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--vt-green-300, #7bb98a), var(--vt-green-600, #2f6b3f));
+}
+.meta {
+  font-size: 0.73rem;
+  color: var(--vt-ink-faint);
+}
+
+.note {
+  margin-top: 0.8rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--vt-ink-faint);
+  border-top: 1px solid var(--vt-line);
+  padding-top: 0.7rem;
+}
+.note strong {
+  color: var(--vt-ink-soft);
+}

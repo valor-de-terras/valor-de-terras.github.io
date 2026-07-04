@@ -4,6 +4,7 @@ import EnrichmentTimeline from "./EnrichmentTimeline";
 import EstimateCard from "./EstimateCard";
 import LiquidityPanel from "./LiquidityPanel";
 import LogisticsPanel from "./LogisticsPanel";
+import ViabilityPanel from "./ViabilityPanel";
 import ZarcPanel from "./ZarcPanel";
 import OutorgasPanel from "./OutorgasPanel";
 import CompliancePanel from "./CompliancePanel";
@@ -15,10 +16,12 @@ import {
   getZarc,
   getOutorgas,
   getCompliance,
+  getViability,
   parcelGeometry,
   type Zarc,
   type Outorgas,
   type Compliance,
+  type Viability,
 } from "../../lib/signals";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
 import { areaHa } from "../../lib/geo";
@@ -83,6 +86,7 @@ export default function MapDemo() {
   const [zarc, setZarc] = useState<Zarc | null>(null);
   const [outorgas, setOutorgas] = useState<Outorgas | null>(null);
   const [compliance, setCompliance] = useState<Compliance | null>(null);
+  const [viability, setViability] = useState<Viability | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const timersRef = useRef<number[]>([]);
   // geração do pipeline: respostas de um run antigo (backend incancelável)
@@ -119,6 +123,7 @@ export default function MapDemo() {
     setZarc(null);
     setOutorgas(null);
     setCompliance(null);
+    setViability(null);
     setError(null);
   }, []);
 
@@ -346,6 +351,9 @@ export default function MapDemo() {
     });
     getCompliance(lon, lat, geom).then((c) => {
       if (alive) setCompliance(c);
+    });
+    getViability(lon, lat, meta.municipality).then((v) => {
+      if (alive) setViability(v);
     });
     return () => {
       alive = false;
@@ -577,6 +585,8 @@ export default function MapDemo() {
               onRequestReport={() => setReportRequestOpen(true)}
             />
           )}
+
+          {status === "done" && viability && <ViabilityPanel data={viability} />}
 
           {status === "done" && compliance && <CompliancePanel data={compliance} />}
 

@@ -22,11 +22,17 @@ import io
 import json
 import sys
 
+# cotações anteriores a este mês são descartadas (evita preço obsoleto no painel)
+MIN_REF_MONTH = "2024-01"
+
 PRODUTOS = {
     "Soja industrial tipo 1": ("graos", "saca 60 kg"),
     "Milho amarelo tipo 1": ("graos", "saca 60 kg"),
     "Trigo pão": ("graos", "saca 60 kg"),
     "Boi em pé": ("pecuaria", "arroba"),
+    "Vaca em pé": ("pecuaria", "arroba"),
+    "Suíno vivo": ("pecuaria", "arroba"),
+    "Erva-mate folha em barranco": ("florestal", "arroba"),
 }
 
 
@@ -55,6 +61,11 @@ def main() -> int:
             preco = last.get("v")
             ref = last.get("p")
             if preco is None or not ref:
+                continue
+            # recência: descarta cotação antiga (produto que deixou de ser cotado na
+            # regional, ex. erva-mate em Maringá parou em 2011) p/ não virar contexto
+            # enganoso no painel de viabilidade. ref_month é 'YYYY-MM'.
+            if str(ref) < MIN_REF_MONTH:
                 continue
             vals.append(
                 f"('{cadeia}','{esc(produto)}','{esc(regional)}','{unidade}',{float(preco):.2f},'{esc(ref)}','SIMA/SEAB-PR')"
