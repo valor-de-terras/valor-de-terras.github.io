@@ -137,3 +137,36 @@ export function getViability(
     p_municipio: municipality ?? null,
   });
 }
+
+export interface Amenities {
+  available: boolean;
+  cidade_polo?: string | null;
+  cenico_km?: number | null;
+  n_atrativos_15km?: number;
+  destaques?: { nome: string; tipo: string; kind: string; dist_km: number }[];
+  fator_sugerido?: number;
+  fonte?: string;
+  nota?: string;
+}
+export function getAmenities(lon: number, lat: number): Promise<Amenities | null> {
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return Promise.resolve(null);
+  return callRpc<Amenities>("get_amenities", { p_lon: lon, p_lat: lat });
+}
+
+export interface Spread {
+  available: boolean;
+  municipio?: string;
+  regiao?: string | null;
+  cagr_recente?: number;
+  periodo_recente?: string;
+  cagr_longo?: number | null;
+  ref?: { cdi: number; ipca: number; poupanca: number };
+  spread_vs_cdi?: number;
+  spread_vs_ipca?: number;
+  fonte?: string;
+  nota?: string;
+}
+export function getSpread(municipality: string): Promise<Spread | null> {
+  if (!municipality) return Promise.resolve(null);
+  return callRpc<Spread>("get_spread", { p_municipio: municipality });
+}

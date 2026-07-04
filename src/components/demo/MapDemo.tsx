@@ -8,6 +8,8 @@ import ViabilityPanel from "./ViabilityPanel";
 import ZarcPanel from "./ZarcPanel";
 import OutorgasPanel from "./OutorgasPanel";
 import CompliancePanel from "./CompliancePanel";
+import AmenityPanel from "./AmenityPanel";
+import SpreadPanel from "./SpreadPanel";
 import ReportPreview from "./ReportPreview";
 import RequestReportModal from "./RequestReportModal";
 import { getLiquidity, type Liquidity } from "../../lib/liquidity";
@@ -17,11 +19,15 @@ import {
   getOutorgas,
   getCompliance,
   getViability,
+  getAmenities,
+  getSpread,
   parcelGeometry,
   type Zarc,
   type Outorgas,
   type Compliance,
   type Viability,
+  type Amenities,
+  type Spread,
 } from "../../lib/signals";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
 import { areaHa } from "../../lib/geo";
@@ -87,6 +93,8 @@ export default function MapDemo() {
   const [outorgas, setOutorgas] = useState<Outorgas | null>(null);
   const [compliance, setCompliance] = useState<Compliance | null>(null);
   const [viability, setViability] = useState<Viability | null>(null);
+  const [amenities, setAmenities] = useState<Amenities | null>(null);
+  const [spread, setSpread] = useState<Spread | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const timersRef = useRef<number[]>([]);
   // geração do pipeline: respostas de um run antigo (backend incancelável)
@@ -124,6 +132,8 @@ export default function MapDemo() {
     setOutorgas(null);
     setCompliance(null);
     setViability(null);
+    setAmenities(null);
+    setSpread(null);
     setError(null);
   }, []);
 
@@ -354,6 +364,12 @@ export default function MapDemo() {
     });
     getViability(lon, lat, meta.municipality).then((v) => {
       if (alive) setViability(v);
+    });
+    getAmenities(lon, lat).then((a) => {
+      if (alive) setAmenities(a);
+    });
+    getSpread(meta.municipality).then((s) => {
+      if (alive) setSpread(s);
     });
     return () => {
       alive = false;
@@ -587,6 +603,10 @@ export default function MapDemo() {
           )}
 
           {status === "done" && viability && <ViabilityPanel data={viability} />}
+
+          {status === "done" && spread && <SpreadPanel data={spread} />}
+
+          {status === "done" && amenities && <AmenityPanel data={amenities} />}
 
           {status === "done" && compliance && <CompliancePanel data={compliance} />}
 

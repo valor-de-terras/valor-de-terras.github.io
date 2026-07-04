@@ -51,10 +51,41 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // 2b) sinais de enriquecimento (Frentes H/I/J/K/L) para a seção 8 do laudo.
+  // Pós-ART (laudo formal): podem expor valores. Calculados aqui a partir da
+  // geometria; falhas individuais não abortam o laudo (best-effort).
+  const prop = bundle.property as Record<string, unknown>;
+  const centroid = (prop.centroid as [number, number]) ?? [null, null];
+  const [lon, lat] = centroid;
+  const muni = (prop.municipality as string | null) ?? null;
+  const geom = prop.geometry ?? null;
+  const rpc = async (fn: string, args: Record<string, unknown>) => {
+    try {
+      const { data, error } = await user.rpc(fn, args);
+      return error ? null : data;
+    } catch {
+      return null;
+    }
+  };
+  const hasPoint = typeof lon === "number" && typeof lat === "number";
+  const [viability, zarc, outorgas, compliance, logistics, amenities, spread] = await Promise.all([
+    hasPoint ? rpc("get_viability", { p_lon: lon, p_lat: lat, p_municipio: muni }) : null,
+    muni ? rpc("get_zarc", { p_municipio: muni }) : null,
+    hasPoint ? rpc("get_outorgas", { p_lon: lon, p_lat: lat, p_geojson: geom }) : null,
+    hasPoint ? rpc("get_compliance", { p_lon: lon, p_lat: lat, p_geojson: geom }) : null,
+    hasPoint ? rpc("get_logistics", { p_lon: lon, p_lat: lat, p_municipio: muni }) : null,
+    hasPoint ? rpc("get_amenities", { p_lon: lon, p_lat: lat }) : null,
+    muni ? rpc("get_spread", { p_municipio: muni }) : null,
+  ]);
+  const bundleWithSignals = {
+    ...bundle,
+    signals: { viability, zarc, outorgas, compliance, logistics, amenities, spread },
+  };
+
   // 3) monta o PDF
   let pdfBytes: Uint8Array;
   try {
-    pdfBytes = await buildLaudoPdf(bundle);
+    pdfBytes = await buildLaudoPdf(bundleWithSignals);
   } catch (e) {
     console.error("pdf build failed:", String(e));
     return jsonResponse({ error: "Falha ao gerar o PDF do laudo" }, origin, 500);

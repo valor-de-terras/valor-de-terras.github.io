@@ -105,6 +105,17 @@ interface Bundle {
     specialty?: string | null;
     crea_valid_until?: string | null;
   } | null;
+  // sinais de enriquecimento (Frentes H/I/J/K/L), calculados na geração do laudo.
+  // pós-ART: podem expor valores; aparecem só no PDF formal, não na prévia.
+  signals?: {
+    viability?: Record<string, unknown> | null;
+    zarc?: Record<string, unknown> | null;
+    outorgas?: Record<string, unknown> | null;
+    compliance?: Record<string, unknown> | null;
+    logistics?: Record<string, unknown> | null;
+    amenities?: Record<string, unknown> | null;
+    spread?: Record<string, unknown> | null;
+  } | null;
 }
 
 // ── cursor de layout com quebra automática de página ─────────────────────────
@@ -303,6 +314,176 @@ const PURPOSE_LABELS: Record<string, string> = {
   cpr: "CPR / crédito rural",
   outro: "Outro",
 };
+
+// ── seção 8: sinais de aptidão, escoamento e conformidade (tese de investimento) ──
+// Retorna true se desenhou a seção (para o chamador numerar a seção seguinte).
+function renderSignals(doc: Doc, signals: Bundle["signals"]): boolean {
+  if (!signals) return false;
+  const via = signals.viability as Record<string, unknown> | null | undefined;
+  const zarc = signals.zarc as Record<string, unknown> | null | undefined;
+  const logi = signals.logistics as Record<string, unknown> | null | undefined;
+  const outo = signals.outorgas as Record<string, unknown> | null | undefined;
+  const comp = signals.compliance as Record<string, unknown> | null | undefined;
+  const amen = signals.amenities as Record<string, unknown> | null | undefined;
+  const spread = signals.spread as Record<string, unknown> | null | undefined;
+
+  const hasAny =
+    (via && (via.atividades as unknown[])?.length) ||
+    (zarc && (zarc.culturas as unknown[])?.length) ||
+    (logi && logi.available) ||
+    (outo && outo.available) ||
+    (comp && comp.available) ||
+    (amen && amen.available) ||
+    (spread && spread.available);
+  if (!hasAny) return false;
+
+  doc.heading("8", "Aptidão, escoamento e conformidade");
+  doc.paragraph(
+    "Fatores de contexto econômico e socioambiental do imóvel, apurados sobre dados públicos abertos na data-base. Complementam o valor de mercado com a leitura de vocação produtiva, logística de escoamento e conformidade regulatória (relevante para protocolos de mercado e crédito).",
+    { size: 8.8 }
+  );
+
+  // 8.1 Vocação e viabilidade por atividade (Frente H)
+  const ativ = (via?.atividades as Array<Record<string, unknown>>) ?? [];
+  if (ativ.length) {
+    doc.paragraph("Vocação e viabilidade por atividade", { font: doc.bold, size: 9.5, gap: 2 });
+    doc.table(
+      ["Atividade", "Viabilidade", "Comprador mais próximo", "Preço regional"],
+      ativ.map((a) => {
+        const preco = a.preco as Record<string, unknown> | null;
+        const km = a.destino_km != null ? `${a.destino_km} km` : "s/ cadastro";
+        const dest = a.destino_municipio ?? a.destino ?? "-";
+        return [
+          String(a.label ?? a.cadeia ?? "-"),
+          `${a.score}/100`,
+          a.destino ? `${dest} (${km})` : "não cadastrado",
+          preco ? `${fmtBRL(Number(preco.preco))}/${String(preco.unidade ?? "").replace("saca 60 kg", "sc")}` : "-",
+        ];
+      }),
+      [0.26, 0.14, 0.42, 0.18],
+      ["l", "r", "l", "r"]
+    );
+    doc.paragraph(
+      "Score = acesso ao comprador da cadeia × aptidão (grãos pelo ZARC; demais pela tolerância a solo/relevo). Sinal de mercado e logística, não projeção de renda por hectare.",
+      { size: 8, color: MUTED }
+    );
+  }
+
+  // 8.2 Aptidão climática ZARC (Frente I)
+  const culturas = (zarc?.culturas as Array<Record<string, unknown>>) ?? [];
+  if (culturas.length) {
+    doc.paragraph("Aptidão climática (ZARC / MAPA)", { font: doc.bold, size: 9.5, gap: 2 });
+    doc.table(
+      ["Cultura", "Decêndios com risco 20%", "Janela de plantio"],
+      culturas.slice(0, 6).map((c) => [
+        String(c.cultura ?? "-"),
+        `${c.n_dec20 ?? 0}`,
+        String(c.janela ?? "-"),
+      ]),
+      [0.32, 0.28, 0.4],
+      ["l", "r", "l"]
+    );
+  }
+
+  // 8.3 Escoamento (Frente H piloto)
+  if (logi?.available) {
+    const nearest = (logi.nearest as Array<Record<string, unknown>>) ?? [];
+    doc.kv([
+      ["Escoamento de grãos - armazém mais próximo",
+        nearest[0] ? `${nearest[0].municipio ?? nearest[0].name} (${nearest[0].dist_km} km)` : "-"],
+      ["Capacidade de armazenagem em 50 km",
+        logi.cap_50km_t != null ? `${Math.round(Number(logi.cap_50km_t) / 1000)} mil t (${logi.n_50km ?? 0} armazéns)` : "-"],
+      ["Distância ao porto de Paranaguá",
+        logi.port_dist_km != null ? `${logi.port_dist_km} km` : "-"],
+    ]);
+  }
+
+  // 8.4 Água e mineração (Frente J)
+  if (outo?.available) {
+    const agua = outo.agua as Record<string, unknown> | null;
+    const min = outo.mineracao as Record<string, unknown> | null;
+    const linhas: [string, string][] = [];
+    if (agua && Number(agua.n_2km) > 0) {
+      linhas.push(["Outorgas de água no entorno (2 km)",
+        `${agua.n_2km} uso(s)${agua.vazao_m3h_2km ? ` · ${agua.vazao_m3h_2km} m³/h` : ""}`]);
+    }
+    if (min && Number(min.n_intersecta) > 0) {
+      linhas.push(["Processos minerários incidentes na área",
+        `${min.n_intersecta} (ANM/SIGMINE) - verificar direitos de terceiro`]);
+    } else if (min && Number(min.n_2km) > 0) {
+      linhas.push(["Processos minerários no entorno (2 km)", `${min.n_2km}`]);
+    }
+    if (linhas.length) {
+      doc.paragraph("Direitos de água e mineração", { font: doc.bold, size: 9.5, gap: 2 });
+      doc.kv(linhas);
+    }
+  }
+
+  // 8.5 Conformidade socioambiental / EUDR (Frente K)
+  if (comp?.available) {
+    const hits = (comp.intersecta as Array<Record<string, unknown>>) ?? [];
+    const urb = comp.urbano as Record<string, unknown> | null;
+    doc.paragraph("Conformidade socioambiental (EUDR)", { font: doc.bold, size: 9.5, gap: 2 });
+    if (hits.length) {
+      doc.table(
+        ["Restrição", "Descrição"],
+        hits.slice(0, 6).map((h) => [
+          String(h.kind === "uc" ? "Unidade de Conservação" : h.kind === "ti" ? "Terra Indígena" : "Embargo IBAMA"),
+          `${h.nome ?? "-"}${h.categoria ? ` (${h.categoria})` : ""}`,
+        ]),
+        [0.3, 0.7],
+        ["l", "l"]
+      );
+    } else {
+      doc.paragraph(
+        "Nenhuma Unidade de Conservação, Terra Indígena ou embargo IBAMA sobrepõe a área nas bases consultadas (screening preliminar; não substitui certidões).",
+        { size: 8.8 }
+      );
+    }
+    if (urb?.dentro) {
+      doc.paragraph(
+        `Atenção: área dentro de perímetro urbano (${urb.perimetro ?? urb.municipio}); a metodologia rural NBR 14.653-3 pode não se aplicar integralmente.`,
+        { size: 8.5, color: MUTED }
+      );
+    }
+  }
+
+  // 8.6 Pontos de atração / fator locacional (Frente L)
+  if (amen?.available) {
+    const fator = Number(amen.fator_sugerido ?? 0);
+    const itens = (amen.destaques as Array<Record<string, unknown>>) ?? [];
+    doc.paragraph("Atratividade locacional (campo de arbítrio)", { font: doc.bold, size: 9.5, gap: 2 });
+    const linhas: [string, string][] = [];
+    if (amen.cidade_polo) linhas.push(["Cidade-polo mais próxima", String(amen.cidade_polo)]);
+    if (itens.length) linhas.push(["Atrativos turísticos/cênicos (15 km)", itens.map((i) => String(i.tipo ?? "")).join(", ")]);
+    linhas.push(["Fator locacional sugerido (ABNT, até +15%)", `+${(fator * 100).toFixed(0)}%`]);
+    doc.kv(linhas);
+    doc.paragraph(
+      "Fator de valorização locacional sugerido dentro do campo de arbítrio da NBR 14.653; sua aplicação é decisão fundamentada do responsável técnico.",
+      { size: 8, color: MUTED }
+    );
+  }
+
+  // 8.7 Spread da terra (terra como classe de ativo)
+  if (spread?.available) {
+    const ref = (spread.ref as Record<string, unknown>) ?? {};
+    const pct = (x: unknown) => (x == null ? "-" : `${(Number(x) * 100).toFixed(1)}% a.a.`);
+    doc.paragraph("A terra como classe de ativo (spread)", { font: doc.bold, size: 9.5, gap: 2 });
+    doc.table(
+      ["Indicador", "Valorização/rendimento nominal"],
+      [
+        [`Terra na região (${String(spread.periodo_recente ?? "")})`, pct(spread.cagr_recente)],
+        ["CDI (renda fixa, referência)", pct(ref.cdi)],
+        ["IPCA (inflação, referência)", pct(ref.ipca)],
+        ["Poupança (referência)", pct(ref.poupanca)],
+      ],
+      [0.6, 0.4],
+      ["l", "r"]
+    );
+    doc.paragraph(String(spread.nota ?? ""), { size: 8, color: MUTED });
+  }
+  return true;
+}
 
 // ── documento ────────────────────────────────────────────────────────────────
 export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
@@ -535,8 +716,11 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     doc.paragraph(narrative, { size: 9.2 });
   }
 
-  // ── 8. Responsabilidade técnica ──
-  doc.heading("8", "Responsabilidade técnica");
+  // ── 8. Aptidão, escoamento e conformidade (tese de investimento) ──
+  const hasSignals = renderSignals(doc, bundle.signals);
+
+  // ── Responsabilidade técnica (9 se a seção 8 foi desenhada, senão 8) ──
+  doc.heading(hasSignals ? "9" : "8", "Responsabilidade técnica");
   doc.kv([
     ["Responsável técnico", String(tech.full_name ?? "-")],
     ["Registro CREA", `${String(tech.crea_number ?? "-")}${tech.uf ? " / " + tech.uf : ""}`],
