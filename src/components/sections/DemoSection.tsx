@@ -2,7 +2,7 @@ import { useReveal } from "../../lib/useReveal";
 import styles from "./DemoSection.module.css";
 
 // Fontes abertas usadas na avaliação (prova de credibilidade na landing).
-const SOURCES = ["SICAR", "MapBiomas", "EMBRAPA", "Open-Meteo", "OpenStreetMap", "DERAL/SEAB-PR"];
+const SOURCES = ["SICAR", "MapBiomas", "EMBRAPA", "Open-Meteo", "OpenStreetMap", "DERAL/SEAB-PR", "INCRA", "VTN/RFB"];
 
 export default function DemoSection() {
   const ref = useReveal<HTMLDivElement>();

@@ -54,8 +54,9 @@ const CATEGORIES: Category[] = [
       { name: "IBGE", detail: "limites e setores" },
       { name: "OpenStreetMap", detail: "acesso e logística" },
       { name: "DERAL / SEAB-PR", detail: "preços de referência" },
+      { name: "INCRA / PPR", detail: "preços referenciais por MRT" },
+      { name: "Receita Federal / VTN", detail: "valor da terra nua (SIPT)" },
       { name: "CEPEA / ESALQ", detail: "preços de referência" },
-      { name: "Receita Federal / ITR", detail: "tributação fundiária" },
     ],
   },
 ];

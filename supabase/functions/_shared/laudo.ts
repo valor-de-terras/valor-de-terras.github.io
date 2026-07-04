@@ -475,6 +475,39 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
   }
   doc.paragraph(statTxt, { size: 8.5, color: MUTED });
 
+  // Frente G: preço-base multi-fonte — declara cada fonte oficial e o peso
+  // aplicado (transparência exigida para defensabilidade ABNT)
+  const compLayers = bundle.enrichment.filter((l) => l.key === "comp");
+  const compLayer = compLayers.find((l) => Array.isArray(l.payload?.sources)) ?? compLayers[0];
+  const rawSources = compLayer?.payload?.sources;
+  const priceSources = Array.isArray(rawSources)
+    ? (rawSources as Array<Record<string, unknown>>)
+    : [];
+  if (priceSources.length) {
+    const totalPeso = priceSources.reduce((acc, s) => acc + Number(s.peso ?? 0), 0);
+    doc.paragraph(
+      "O preço-base unitário que ancora os comparativos é a média ponderada das referências oficiais abaixo (pesos renormalizados entre as fontes com cobertura para o município):"
+    );
+    doc.table(
+      ["Fonte", "Ano", "Peso", "R$/ha base", "Referência"],
+      priceSources.map((s) => [
+        String(s.source ?? "-"),
+        String(s.ano ?? "-"),
+        totalPeso > 0 ? `${((Number(s.peso ?? 0) / totalPeso) * 100).toFixed(0)}%` : "-",
+        fmtBRL(Number(s.valor_ha ?? 0)),
+        String(s.detalhe ?? "-"),
+      ]),
+      [0.30, 0.08, 0.08, 0.16, 0.38],
+      ["l", "l", "r", "r", "l"]
+    );
+    if (priceSources.some((s) => String(s.source ?? "").includes("VTN"))) {
+      doc.paragraph(
+        "Nota: o VTN/Receita Federal (SIPT) é referencial de natureza fiscal (ITR), declarado por municípios e órgãos estaduais, e tende a se situar abaixo do valor de transação de mercado; o peso atribuído reflete essa natureza.",
+        { size: 8.5, color: MUTED }
+      );
+    }
+  }
+
   // ── 7. Conclusão ──
   doc.heading("7", "Conclusão - valor de mercado");
   doc.ensure(88);

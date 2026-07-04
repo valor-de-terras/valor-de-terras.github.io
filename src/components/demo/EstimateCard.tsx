@@ -132,7 +132,8 @@ export default function EstimateCard({
       <p className={styles.disclaimer}>
         Estimativa preliminar (Grau I da NBR 14.653-3), calculada sobre a geometria informada
         (CAR real do SICAR ou arquivo enviado) e dados abertos reais (relevo, solo, uso, clima,
-        acesso e referências DERAL/SEAB-PR). Não constitui laudo nem parecer técnico: a avaliação
+        acesso e preços de referência ponderados DERAL/SEAB-PR, INCRA e VTN/Receita Federal).
+        Não constitui laudo nem parecer técnico: a avaliação
         de imóvel rural é atribuição privativa de Engenheiro Agrônomo ou Florestal com CREA e ART.
         Os Graus II e III dependem da revisão técnica.
       </p>

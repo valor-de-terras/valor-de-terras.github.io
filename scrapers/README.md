@@ -68,6 +68,28 @@ schtasks /Create /TN "ValorDeTerras-ScrapeCaixa" /SC DAILY /ST 08:00 /F `
 Alternativas para tirar da máquina local no futuro: um VPS/proxy com IP residencial BR, ou
 uma fonte que não bloqueie datacenter (ex.: Mega Leilões) via Edge Function + pg_cron.
 
+## Seeds de preço-base multi-fonte (Frente G)
+
+Dois geradores one-shot (não são scrapers de cron) que transformam os PDFs oficiais em
+seed SQL de `price_refs` (ver `supabase/migrations/20260703230000_price_refs_multifonte.sql`):
+
+- `vtn_rfb_seed.py` — planilha VTN da Receita Federal (SIPT), R$/ha por município e
+  aptidão. gov.br exige User-Agent de navegador (403 sem ele). Registros com coluna
+  "s/informação" são tratados; registro ambíguo (célula em branco sem marcador, ex.
+  Xambrê 2025) é pulado com aviso.
+- `incra_ppr_seed.py` — PPR da SR(09)PR do INCRA (VTN/ha por MRT, expandido por município
+  via lista de abrangência). URLs do Plone exigem sufixo `/@@download/file`. PPR 2024
+  cobre 6 dos 8 MRTs (sem Litoral/RMC e Norte Pioneiro núcleo).
+
+```bash
+py -3 scrapers/vtn_rfb_seed.py --pdf vtn2025.pdf --ano 2025 --uf PR --out seed_vtn.sql
+py -3 scrapers/incra_ppr_seed.py --pdf PPR_SR09_2024_real.pdf --ano 2024 --out seed_incra.sql
+```
+
+Requer `pymupdf` (única exceção ao "só stdlib"; uso local, one-shot). Ao sair a VTN 2026
+ou a PPR 2025, regenerar e criar nova migration de seed (o índice único por
+`source+uf+município+categoria+ano` mantém os anos anteriores como histórico).
+
 ## Guardrails legais (obrigatórios ao escalar)
 
 - Respeitar `robots.txt` por host. NÃO raspar hosts com anti-bot/403 ou ToS anti-scraping

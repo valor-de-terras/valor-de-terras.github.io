@@ -22,7 +22,9 @@ Reflete o modelo de domínio do plano, com a separação dura entre **estimativa
 | `data_snapshots` | Versão congelada de cada fonte externa (defensabilidade) |
 | `audit_logs` | Trilha de mudanças de estado e edições |
 | `enrichment_layers` | Catálogo das camadas de enriquecimento (referência) |
-| `regional_base_prices` | Preços-base regionais (DERAL/CEPEA) do motor de estimativa |
+| `regional_base_prices` | Preços-base regionais (DERAL/CEPEA) do motor de estimativa (fallback) |
+| `price_refs` | Referências de preço por fonte oficial (VTN/RFB por município, INCRA por MRT) — RLS deny-all |
+| `price_source_weights` | Pesos do blend multi-fonte do preço-base (DERAL/INCRA/VTN_RFB), ajustáveis sem migration |
 
 ## Máquina de estados (`appraisal_status`)
 
@@ -39,7 +41,7 @@ Chamáveis via `supabase.rpc(...)` com o JWT do usuário (RLS aplicada):
 | Função | Descrição |
 |--------|-----------|
 | `create_appraisal_request(p_geojson, p_purpose, p_origin, p_car_code, p_municipality, p_uf)` | Cria `Property` (mede área/perímetro/centroide via PostGIS) e o pedido |
-| `run_estimate_with_enrichment(p_request_id, p_enrichment)` | Enriquecimento + homogeneização + tratamento estatístico NBR (Chauvenet, IC 80%) + comparáveis |
+| `run_estimate_with_enrichment(p_request_id, p_enrichment)` | Enriquecimento + preço-base multi-fonte ponderado (DERAL+INCRA+VTN/RFB) + homogeneização + tratamento estatístico NBR (Chauvenet, IC 80%) + comparáveis |
 | `proceed_to_technical_review(p_request_id)` | Cliente solicita o laudo formal com ART |
 | `cancel_request(p_request_id)` | Cancela o pedido |
 | `assign_technical_review(p_request_id)` | Engenheiro assume a revisão (somente equipe técnica) |
