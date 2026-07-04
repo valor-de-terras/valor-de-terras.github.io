@@ -114,7 +114,10 @@ export interface AtividadeViab {
   destino: string | null;
   destino_municipio: string | null;
   destino_km: number | null;
+  destino_estrada_km?: number | null;
+  destino_tempo_min?: number | null;
   preco: { produto: string; preco: number; unidade: string; ref_month: string } | null;
+  receita_ha?: number | null;
   nota: string | null;
 }
 export interface Viability {

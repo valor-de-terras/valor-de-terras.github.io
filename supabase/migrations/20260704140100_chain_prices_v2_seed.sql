@@ -1,6 +1,6 @@
 -- Frente H v2 · seed chain_prices — gerado por scrapers/sima_precos_seed.py
 -- Fonte: SIMA/SEAB-PR via pipeline precos-diarios (Datageo). Último mês por
--- produto x regional; 122 linhas. ref_month declara a vigência.
+-- produto x regional; 116 linhas. ref_month declara a vigência.
 
 insert into public.chain_prices (cadeia, produto, regional, unidade, preco, ref_month, fonte) values
 ('graos','Soja industrial tipo 1','Apucarana','saca 60 kg',116.08,'2026-03','SIMA/SEAB-PR'),
@@ -118,11 +118,5 @@ insert into public.chain_prices (cadeia, produto, regional, unidade, preco, ref_
 ('pecuaria','Suíno vivo','Ponta Grossa','arroba',7.02,'2026-03','SIMA/SEAB-PR'),
 ('pecuaria','Suíno vivo','Toledo','arroba',6.65,'2026-03','SIMA/SEAB-PR'),
 ('pecuaria','Suíno vivo','Umuarama','arroba',6.82,'2026-03','SIMA/SEAB-PR'),
-('pecuaria','Suíno vivo','União da Vitória','arroba',6.54,'2026-03','SIMA/SEAB-PR'),
-('florestal','Erva-mate folha em barranco','Guarapuava','arroba',18.00,'2026-03','SIMA/SEAB-PR'),
-('florestal','Erva-mate folha em barranco','Irati','arroba',18.00,'2026-03','SIMA/SEAB-PR'),
-('florestal','Erva-mate folha em barranco','Pato Branco','arroba',18.80,'2026-03','SIMA/SEAB-PR'),
-('florestal','Erva-mate folha em barranco','Pitanga','arroba',19.80,'2026-03','SIMA/SEAB-PR'),
-('florestal','Erva-mate folha em barranco','Ponta Grossa','arroba',20.00,'2026-03','SIMA/SEAB-PR'),
-('florestal','Erva-mate folha em barranco','União da Vitória','arroba',17.10,'2026-03','SIMA/SEAB-PR')
+('pecuaria','Suíno vivo','União da Vitória','arroba',6.54,'2026-03','SIMA/SEAB-PR')
 on conflict (produto, regional) do update set preco = excluded.preco, ref_month = excluded.ref_month;

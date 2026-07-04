@@ -33,6 +33,9 @@ export default function ViabilityPanel({ data }: { data: Viability | null }) {
             <div className={styles.rowTop}>
               <span className={styles.name}>{a.label}</span>
               <span className={styles.grade}>
+                {a.receita_ha != null
+                  ? `~R$ ${a.receita_ha.toLocaleString("pt-BR")}/ha · `
+                  : ""}
                 viabilidade {grade(a.score)} · {a.score}/100
               </span>
             </div>
@@ -44,7 +47,9 @@ export default function ViabilityPanel({ data }: { data: Viability | null }) {
             </div>
             <div className={styles.meta}>
               {a.destino
-                ? `comprador: ${a.destino_municipio ?? a.destino} a ${a.destino_km} km`
+                ? `comprador: ${a.destino_municipio ?? a.destino} a ${
+                    a.destino_estrada_km ?? a.destino_km
+                  } km${a.destino_tempo_min != null ? ` (~${a.destino_tempo_min} min)` : ""}`
                 : "comprador não cadastrado nesta base"}
               {a.preco ? ` · ${fmtPreco(a.preco)}` : ""}
               {a.cadeia === "graos" ? ` · aptidão ZARC ${a.aptidao}%` : ""}
@@ -55,11 +60,13 @@ export default function ViabilityPanel({ data }: { data: Viability | null }) {
 
       <p className={styles.note}>
         Ranking de atividades que viabilizam o investimento na área: combina a{" "}
-        <strong>distância ao comprador da cadeia</strong> (armazém, frigorífico, laticínio,
-        indústria florestal) com a <strong>aptidão</strong> (grãos pelo ZARC do município; as
-        demais pela tolerância da atividade a solo e relevo). Preços regionais SIMA/SEAB-PR como
-        contexto. É um sinal de mercado e logística, não uma projeção de renda por hectare, e não
-        altera o valor estimado.
+        <strong>distância por estrada (estimada) ao comprador da cadeia</strong> (armazém,
+        frigorífico, laticínio, indústria florestal) com a <strong>aptidão</strong> (grãos pelo
+        ZARC do município; as
+        demais pela tolerância da atividade a solo e relevo). O <strong>R$/ha</strong> é a receita
+        bruta potencial de referência (produtividade × preço regional), não a margem líquida.
+        Distância por estrada estimada (fator de sinuosidade sobre a linha reta), não roteamento
+        GPS. Sinal de mercado e logística; não altera o valor estimado.
       </p>
     </section>
   );

@@ -26,6 +26,8 @@ export interface Logistics {
   n_50km?: number;
   port_dist_km?: number | null;
   port_name?: string;
+  armazem_estrada_km?: number | null;
+  armazem_tempo_min?: number | null;
   graos?: GraosPrice[];
   graos_regional?: string | null;
   fonte?: string;

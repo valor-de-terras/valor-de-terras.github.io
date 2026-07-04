@@ -32,12 +32,16 @@ export default function LogisticsPanel({ data }: { data: Logistics | null }) {
         <div className={styles.metric}>
           <span className={styles.mLabel}>Armazém mais próximo</span>
           <span className={styles.mValue}>
-            {nearest[0] ? `${nearest[0].dist_km} km` : "—"}
+            {data.armazem_estrada_km != null
+              ? `${data.armazem_estrada_km} km`
+              : nearest[0]
+              ? `${nearest[0].dist_km} km`
+              : "—"}
           </span>
           {nearest[0] && (
             <span className={styles.mSub}>
               {nearest[0].municipio ?? ""}
-              {nearest[0].cap_t ? ` · ${fmtCap(nearest[0].cap_t)}` : ""}
+              {data.armazem_tempo_min != null ? ` · ~${data.armazem_tempo_min} min` : ""}
             </span>
           )}
         </div>

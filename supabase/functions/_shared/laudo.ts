@@ -348,23 +348,23 @@ function renderSignals(doc: Doc, signals: Bundle["signals"]): boolean {
   if (ativ.length) {
     doc.paragraph("Vocação e viabilidade por atividade", { font: doc.bold, size: 9.5, gap: 2 });
     doc.table(
-      ["Atividade", "Viabilidade", "Comprador mais próximo", "Preço regional"],
+      ["Atividade", "Viab.", "R$/ha bruto", "Comprador (estrada est.)"],
       ativ.map((a) => {
-        const preco = a.preco as Record<string, unknown> | null;
-        const km = a.destino_km != null ? `${a.destino_km} km` : "s/ cadastro";
+        const km = a.destino_estrada_km ?? a.destino_km;
+        const tempo = a.destino_tempo_min != null ? `, ~${a.destino_tempo_min} min` : "";
         const dest = a.destino_municipio ?? a.destino ?? "-";
         return [
           String(a.label ?? a.cadeia ?? "-"),
           `${a.score}/100`,
-          a.destino ? `${dest} (${km})` : "não cadastrado",
-          preco ? `${fmtBRL(Number(preco.preco))}/${String(preco.unidade ?? "").replace("saca 60 kg", "sc")}` : "-",
+          a.receita_ha != null ? fmtBRL(Number(a.receita_ha)) : "-",
+          a.destino ? `${dest} (${km} km${tempo})` : "não cadastrado",
         ];
       }),
-      [0.26, 0.14, 0.42, 0.18],
-      ["l", "r", "l", "r"]
+      [0.24, 0.12, 0.2, 0.44],
+      ["l", "r", "r", "l"]
     );
     doc.paragraph(
-      "Score = acesso ao comprador da cadeia × aptidão (grãos pelo ZARC; demais pela tolerância a solo/relevo). Sinal de mercado e logística, não projeção de renda por hectare.",
+      "Viabilidade = acesso ao comprador (distância por estrada estimada) × aptidão (grãos pelo ZARC; demais pela tolerância a solo/relevo). R$/ha = receita bruta potencial de referência (produtividade × preço regional), não margem líquida.",
       { size: 8, color: MUTED }
     );
   }
@@ -385,17 +385,37 @@ function renderSignals(doc: Doc, signals: Bundle["signals"]): boolean {
     );
   }
 
-  // 8.3 Escoamento (Frente H piloto)
+  // 8.3 Escoamento (Frente H)
   if (logi?.available) {
     const nearest = (logi.nearest as Array<Record<string, unknown>>) ?? [];
+    const road = logi.armazem_estrada_km;
+    const tempo = logi.armazem_tempo_min;
+    const distTxt = road != null
+      ? `${road} km${tempo != null ? ` (~${tempo} min)` : ""} por estrada`
+      : nearest[0] ? `${nearest[0].dist_km} km` : "-";
     doc.kv([
       ["Escoamento de grãos - armazém mais próximo",
-        nearest[0] ? `${nearest[0].municipio ?? nearest[0].name} (${nearest[0].dist_km} km)` : "-"],
+        nearest[0] ? `${nearest[0].municipio ?? nearest[0].name} - ${distTxt}` : "-"],
       ["Capacidade de armazenagem em 50 km",
         logi.cap_50km_t != null ? `${Math.round(Number(logi.cap_50km_t) / 1000)} mil t (${logi.n_50km ?? 0} armazéns)` : "-"],
       ["Distância ao porto de Paranaguá",
-        logi.port_dist_km != null ? `${logi.port_dist_km} km` : "-"],
+        logi.port_dist_km != null ? `${logi.port_dist_km} km (linha reta)` : "-"],
     ]);
+    const graos = (logi.graos as Array<Record<string, unknown>>) ?? [];
+    if (graos.length) {
+      doc.table(
+        ["Grão", "Preço regional", "Frete ao armazém (est.)"],
+        graos.map((g) => [
+          String(g.produto ?? "").replace(/ tipo 1$/, ""),
+          `${fmtBRL(Number(g.preco))}/${String(g.unidade ?? "").replace("saca 60 kg", "sc")}`,
+          g.frete_ate_armazem != null
+            ? `${fmtBRL(Number(g.frete_ate_armazem))}/sc${g.frete_pct != null ? ` (${g.frete_pct}%)` : ""}`
+            : "-",
+        ]),
+        [0.34, 0.33, 0.33],
+        ["l", "r", "r"]
+      );
+    }
   }
 
   // 8.4 Água e mineração (Frente J)

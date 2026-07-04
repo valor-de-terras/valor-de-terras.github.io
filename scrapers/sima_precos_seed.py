@@ -32,7 +32,9 @@ PRODUTOS = {
     "Boi em pé": ("pecuaria", "arroba"),
     "Vaca em pé": ("pecuaria", "arroba"),
     "Suíno vivo": ("pecuaria", "arroba"),
-    "Erva-mate folha em barranco": ("florestal", "arroba"),
+    # florestal usa preço de tora (Preços Florestais/SEAB), não erva-mate — ver
+    # scrapers e a migration de refinos; erva-mate é produto florestal não-madeireiro
+    # e não representa a cadeia de silvicultura (destino serraria/celulose).
 }
 
 
