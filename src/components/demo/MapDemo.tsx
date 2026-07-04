@@ -3,9 +3,11 @@ import MapView from "./MapView";
 import EnrichmentTimeline from "./EnrichmentTimeline";
 import EstimateCard from "./EstimateCard";
 import LiquidityPanel from "./LiquidityPanel";
+import LogisticsPanel from "./LogisticsPanel";
 import ReportPreview from "./ReportPreview";
 import RequestReportModal from "./RequestReportModal";
 import { getLiquidity, type Liquidity } from "../../lib/liquidity";
+import { getLogistics, type Logistics } from "../../lib/logistics";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
 import { areaHa } from "../../lib/geo";
 import { fetchCarAtPoint, municipioBasePrice, geocodeMunicipioPR } from "../../lib/sicar";
@@ -65,6 +67,7 @@ export default function MapDemo() {
   const [carGeoLoading, setCarGeoLoading] = useState(false);
   const [carGeoError, setCarGeoError] = useState<string | null>(null);
   const [liquidity, setLiquidity] = useState<Liquidity | null>(null);
+  const [logistics, setLogistics] = useState<Logistics | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const timersRef = useRef<number[]>([]);
   // geração do pipeline: respostas de um run antigo (backend incancelável)
@@ -97,6 +100,7 @@ export default function MapDemo() {
     setBackendUsed(false);
     setRequestId(null);
     setLiquidity(null);
+    setLogistics(null);
     setError(null);
   }, []);
 
@@ -303,12 +307,16 @@ export default function MapDemo() {
 
   useEffect(() => () => clearTimers(), []);
 
-  // Frente C: busca o sinal de liquidez da região quando a estimativa conclui.
+  // Frente C: sinal de liquidez da região quando a estimativa conclui.
+  // Frente H (piloto): sinal logístico da cadeia de grãos pelo centroide.
   useEffect(() => {
     if (status !== "done" || !result || !meta) return;
     let alive = true;
     getLiquidity(meta.municipality, meta.uf, result.area, true).then((l) => {
       if (alive) setLiquidity(l);
+    });
+    getLogistics(result.centroid[0], result.centroid[1]).then((l) => {
+      if (alive) setLogistics(l);
     });
     return () => {
       alive = false;
@@ -540,6 +548,8 @@ export default function MapDemo() {
               onRequestReport={() => setReportRequestOpen(true)}
             />
           )}
+
+          {status === "done" && logistics && <LogisticsPanel data={logistics} />}
 
           {status === "done" && liquidity && <LiquidityPanel data={liquidity} />}
         </div>
