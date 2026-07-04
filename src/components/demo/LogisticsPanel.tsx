@@ -55,12 +55,39 @@ export default function LogisticsPanel({ data }: { data: Logistics | null }) {
         </div>
       </div>
 
+      {data.graos && data.graos.length > 0 && (
+        <div className={styles.graos}>
+          <span className={styles.graosHead}>
+            Preço da cadeia de grãos
+            {data.graos_regional ? ` · regional ${data.graos_regional}` : ""}
+          </span>
+          <div className={styles.graosRows}>
+            {data.graos.map((g) => (
+              <div className={styles.graosRow} key={g.produto}>
+                <span className={styles.graosProd}>{g.produto.replace(/ tipo 1$/, "")}</span>
+                <span className={styles.graosPrice}>
+                  R$ {g.preco.toFixed(2)}/{g.unidade.replace("saca 60 kg", "sc")}
+                </span>
+                {g.frete_ate_armazem != null && (
+                  <span className={styles.graosFreight}>
+                    frete ao armazém ~R$ {g.frete_ate_armazem.toFixed(2)}/sc
+                    {g.frete_pct != null ? ` (${g.frete_pct}%)` : ""}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className={styles.note}>
         Sinal logístico da cadeia de grãos: proximidade e capacidade de armazenagem
         ({data.fonte ?? "CONAB"}) e distância ao porto exportador. O score reflete a
         proximidade à infraestrutura de escoamento, não a vocação produtiva da região.
-        Distâncias em linha reta; a análise por tempo de rota e por outras cadeias
-        (madeira, pecuária, leite) entra nas próximas versões. Não altera o valor estimado.
+        Preços regionais SIMA/SEAB-PR; o frete estimado usa a distância até o armazém e um
+        custo paramétrico (calibrar com SIFRECA). Distâncias em linha reta; tempo de rota e
+        outras cadeias (madeira, pecuária, leite) entram nas próximas versões. Não altera o
+        valor estimado.
       </p>
     </section>
   );

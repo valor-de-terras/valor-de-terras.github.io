@@ -4,10 +4,22 @@ import EnrichmentTimeline from "./EnrichmentTimeline";
 import EstimateCard from "./EstimateCard";
 import LiquidityPanel from "./LiquidityPanel";
 import LogisticsPanel from "./LogisticsPanel";
+import ZarcPanel from "./ZarcPanel";
+import OutorgasPanel from "./OutorgasPanel";
+import CompliancePanel from "./CompliancePanel";
 import ReportPreview from "./ReportPreview";
 import RequestReportModal from "./RequestReportModal";
 import { getLiquidity, type Liquidity } from "../../lib/liquidity";
 import { getLogistics, type Logistics } from "../../lib/logistics";
+import {
+  getZarc,
+  getOutorgas,
+  getCompliance,
+  parcelGeometry,
+  type Zarc,
+  type Outorgas,
+  type Compliance,
+} from "../../lib/signals";
 import { ACCEPTED_EXT, parseGeoFile, type ParsedGeo } from "../../lib/parseGeo";
 import { areaHa } from "../../lib/geo";
 import { fetchCarAtPoint, municipioBasePrice, geocodeMunicipioPR } from "../../lib/sicar";
@@ -68,6 +80,9 @@ export default function MapDemo() {
   const [carGeoError, setCarGeoError] = useState<string | null>(null);
   const [liquidity, setLiquidity] = useState<Liquidity | null>(null);
   const [logistics, setLogistics] = useState<Logistics | null>(null);
+  const [zarc, setZarc] = useState<Zarc | null>(null);
+  const [outorgas, setOutorgas] = useState<Outorgas | null>(null);
+  const [compliance, setCompliance] = useState<Compliance | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const timersRef = useRef<number[]>([]);
   // geração do pipeline: respostas de um run antigo (backend incancelável)
@@ -101,6 +116,9 @@ export default function MapDemo() {
     setRequestId(null);
     setLiquidity(null);
     setLogistics(null);
+    setZarc(null);
+    setOutorgas(null);
+    setCompliance(null);
     setError(null);
   }, []);
 
@@ -307,21 +325,32 @@ export default function MapDemo() {
 
   useEffect(() => () => clearTimers(), []);
 
-  // Frente C: sinal de liquidez da região quando a estimativa conclui.
-  // Frente H (piloto): sinal logístico da cadeia de grãos pelo centroide.
+  // Sinais pós-estimativa por coordenada/geometria (não-monetários):
+  // C liquidez · H logística+preços · I ZARC · J outorgas · K restrições.
   useEffect(() => {
     if (status !== "done" || !result || !meta) return;
     let alive = true;
+    const [lon, lat] = result.centroid;
+    const geom = parcelGeometry(parcel);
     getLiquidity(meta.municipality, meta.uf, result.area, true).then((l) => {
       if (alive) setLiquidity(l);
     });
-    getLogistics(result.centroid[0], result.centroid[1]).then((l) => {
+    getLogistics(lon, lat, meta.municipality).then((l) => {
       if (alive) setLogistics(l);
+    });
+    getZarc(meta.municipality, meta.uf).then((z) => {
+      if (alive) setZarc(z);
+    });
+    getOutorgas(lon, lat, geom).then((o) => {
+      if (alive) setOutorgas(o);
+    });
+    getCompliance(lon, lat, geom).then((c) => {
+      if (alive) setCompliance(c);
     });
     return () => {
       alive = false;
     };
-  }, [status, result, meta]);
+  }, [status, result, meta, parcel]);
 
   const compMarkers =
     result && status === "done"
@@ -549,7 +578,13 @@ export default function MapDemo() {
             />
           )}
 
+          {status === "done" && compliance && <CompliancePanel data={compliance} />}
+
+          {status === "done" && zarc && <ZarcPanel data={zarc} />}
+
           {status === "done" && logistics && <LogisticsPanel data={logistics} />}
+
+          {status === "done" && outorgas && <OutorgasPanel data={outorgas} />}
 
           {status === "done" && liquidity && <LiquidityPanel data={liquidity} />}
         </div>

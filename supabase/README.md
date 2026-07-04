@@ -25,6 +25,18 @@ Reflete o modelo de domínio do plano, com a separação dura entre **estimativa
 | `regional_base_prices` | Preços-base regionais (DERAL/CEPEA) do motor de estimativa (fallback) |
 | `price_refs` | Referências de preço por fonte oficial (VTN/RFB por município, INCRA por MRT) — RLS deny-all |
 | `price_source_weights` | Pesos do blend multi-fonte do preço-base (DERAL/INCRA/VTN_RFB), ajustáveis sem migration |
+| `logistics_pois` | Frente H: armazéns CONAB + porto (escoamento de grãos) — RLS deny-all |
+| `chain_prices` / `freight_params` | Frente H v2: preços SIMA por cadeia/regional + parâmetros de frete |
+| `zarc_summary` | Frente I: aptidão climática ZARC por município × cultura — RLS deny-all |
+| `outorgas` | Frente J: outorgas de água (SIGARH) e processos minerários (ANM/SIGMINE) — RLS deny-all |
+| `restricted_areas` | Frente K: UCs (CNUC), TIs (FUNAI), embargos (IBAMA) p/ screening — RLS deny-all |
+| `urban_perimeters` | Ext. D: perímetros urbanos municipais (classificador rural × urbano) — RLS deny-all |
+
+> **Seeds geoespaciais pesados** (`outorgas_agua`, `outorgas_mineracao`, `urban_perimeters`,
+> `restricted_areas`): ficam **fora do repo** (`.gitignore`) por tamanho (~55 MB) e são
+> **regeneráveis** por `scrapers/{sigarh_outorgas,sigmine,perimetros_urbanos,restricoes}_seed.py`
+> a partir das fontes oficiais. Já aplicados e registrados em produção. Para reconstruir do
+> zero: rodar os scrapers e aplicar os `.sql` gerados via `db query -f` (fatiar se >1 MB).
 
 ## Máquina de estados (`appraisal_status`)
 

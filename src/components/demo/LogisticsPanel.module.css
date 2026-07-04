@@ -75,6 +75,45 @@
   color: var(--vt-ink);
 }
 
+.graos {
+  margin-top: 0.8rem;
+}
+.graosHead {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--vt-ink-soft);
+  margin-bottom: 0.45rem;
+}
+.graosRows {
+  display: grid;
+  gap: 0.4rem;
+}
+.graosRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: var(--vt-paper-2);
+  border: 1px solid var(--vt-line);
+  border-radius: var(--vt-radius);
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+}
+.graosProd {
+  font-weight: 600;
+  color: var(--vt-ink);
+  min-width: 4rem;
+}
+.graosPrice {
+  color: var(--vt-ink);
+}
+.graosFreight {
+  font-size: 0.72rem;
+  color: var(--vt-ink-faint);
+  margin-left: auto;
+}
+
 .note {
   margin-top: 0.8rem;
   font-size: 0.72rem;

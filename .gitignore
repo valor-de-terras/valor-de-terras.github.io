@@ -20,6 +20,14 @@ supabase/.branches/
 *.tsbuildinfo
 deno.lock
 
+# seeds geoespaciais pesados (>1 MB), regeneráveis pelos scrapers e já aplicados
+# em produção. Fora do repo público p/ não inflar o clone do site. Regenerar:
+# scrapers/{sigarh_outorgas,sigmine,perimetros_urbanos,restricoes}_seed.py
+supabase/migrations/20260704090100_outorgas_agua_seed.sql
+supabase/migrations/20260704090200_outorgas_mineracao_seed.sql
+supabase/migrations/20260704090500_urban_perimeters_seed.sql
+supabase/migrations/20260704090600_restricted_areas_seed.sql
+
 # laudos reais (LGPD) e logs do scraper local — nunca no repo público
 *.pdf
 scrapers/*.log
