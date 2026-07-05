@@ -77,9 +77,21 @@ Deno.serve(async (req: Request) => {
     hasPoint ? rpc("get_amenities", { p_lon: lon, p_lat: lat }) : null,
     muni ? rpc("get_spread", { p_municipio: muni }) : null,
   ]);
+  // código de verificação ALEATÓRIO (não derivável do request_id): entra no PDF
+  // ANTES do hash, para o SHA-256 ser do documento final já com o código.
+  const B32 = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
+  const rnd = crypto.getRandomValues(new Uint8Array(10));
+  let verificationCode = "";
+  for (let i = 0; i < 10; i++) verificationCode += B32[rnd[i] % 32];
+  const origin2 = req.headers.get("Origin") ?? "";
+  const verifyBase = origin2.includes("valor-de-terras")
+    ? `${origin2}/#/verificar`
+    : "https://valor-de-terras.github.io/#/verificar";
+
   const bundleWithSignals = {
     ...bundle,
     signals: { viability, zarc, outorgas, compliance, logistics, amenities, spread },
+    verification: { code: verificationCode, url: `${verifyBase}?c=${verificationCode}` },
   };
 
   // 3) monta o PDF
@@ -103,10 +115,18 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Falha ao gravar o PDF do laudo." }, origin, 400);
   }
 
+  // hash do PDF final (integridade) — a mesma verificação pode ser refeita por
+  // qualquer um sobre o arquivo entregue.
+  const shaBuf = await crypto.subtle.digest("SHA-256", pdfBytes as unknown as BufferSource);
+  const sha256 = Array.from(new Uint8Array(shaBuf))
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+
   // 5) finaliza (REPORT_GENERATING -> DELIVERED) com o JWT do engenheiro (trava de responsável + caminho)
   const { error: fErr } = await user.rpc("finalize_report_delivery", {
     p_request_id: requestId,
     p_report_pdf_path: path,
+    p_sha256: sha256,
+    p_verification_code: verificationCode,
   });
   if (fErr) return jsonResponse({ error: fErr.message }, origin, 400);
 

@@ -1,0 +1,122 @@
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2.5rem 1.2rem 4rem;
+}
+.back {
+  font-size: 0.82rem;
+  color: var(--vt-ink-faint, #667);
+  text-decoration: none;
+}
+.title {
+  margin: 1rem 0 0.4rem;
+  font-family: var(--vt-font-display, serif);
+  font-size: 1.7rem;
+  color: var(--vt-ink, #1a1a1a);
+}
+.lead {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--vt-ink-soft, #445);
+  margin-bottom: 1.4rem;
+}
+.form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.4rem;
+}
+.input {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--vt-line, #ccc);
+  border-radius: var(--vt-radius, 8px);
+  font-family: var(--vt-font-mono, monospace);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: var(--vt-radius, 8px);
+  background: var(--vt-brand, #2f6b3f);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.muted {
+  color: var(--vt-ink-faint, #778);
+  font-size: 0.9rem;
+}
+.notFound {
+  background: #fdf3ec;
+  border-left: 3px solid #a3541f;
+  border-radius: var(--vt-radius-sm, 6px);
+  padding: 0.9rem 1.1rem;
+  font-size: 0.9rem;
+  color: var(--vt-ink-soft, #445);
+}
+.card {
+  border: 1px solid var(--vt-line, #ddd);
+  border-radius: var(--vt-radius-lg, 12px);
+  padding: 1.3rem 1.4rem;
+  background: var(--vt-paper, #fff);
+  box-shadow: var(--vt-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+.badgeOk {
+  display: inline-block;
+  font-family: var(--vt-font-mono, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--vt-brand, #2f6b3f);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+.kv {
+  display: grid;
+  grid-template-columns: minmax(9rem, auto) 1fr;
+  gap: 0.5rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.kv dt {
+  color: var(--vt-ink-faint, #778);
+}
+.kv dd {
+  margin: 0;
+  color: var(--vt-ink, #1a1a1a);
+  font-weight: 500;
+}
+.sigOk {
+  color: #2f6b3f;
+  font-weight: 600;
+}
+.sigPend {
+  color: #a3541f;
+}
+.hash {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--vt-line, #eee);
+}
+.hashLabel {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--vt-ink-faint, #778);
+  margin-bottom: 0.3rem;
+}
+.hashVal {
+  font-family: var(--vt-font-mono, monospace);
+  font-size: 0.68rem;
+  word-break: break-all;
+  color: var(--vt-ink-soft, #445);
+}
+.note {
+  margin-top: 1rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--vt-ink-faint, #778);
+}

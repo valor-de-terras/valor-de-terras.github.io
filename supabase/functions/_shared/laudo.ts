@@ -116,6 +116,8 @@ interface Bundle {
     amenities?: Record<string, unknown> | null;
     spread?: Record<string, unknown> | null;
   } | null;
+  // código de verificação pública + URL (assinatura/autenticidade).
+  verification?: { code: string; url: string } | null;
 }
 
 // ── cursor de layout com quebra automática de página ─────────────────────────
@@ -557,7 +559,8 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     comps: bundle.comparables.length, centroid: prop.centroid,
   }))).slice(0, 16);
 
-  doc.footer = `Laudo ${shortId} - gerado em ${genAt.slice(0, 19).replace("T", " ")} UTC - modelo ${modelVersion} - hash ${hash}`;
+  const verifCode = bundle.verification?.code ?? "";
+  doc.footer = `Laudo ${shortId} - gerado em ${genAt.slice(0, 19).replace("T", " ")} UTC - modelo ${modelVersion} - hash ${hash}${verifCode ? ` - verificacao ${verifCode}` : ""}`;
 
   // ── CAPA ──
   doc.newPage();
@@ -760,6 +763,20 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     "Este laudo foi emitido com base em geometria e dados abertos reais, homogeneizados conforme a NBR 14.653, sob responsabilidade técnica do profissional acima, habilitado no CREA e com ART registrada. A defensabilidade é assegurada pelo congelamento das fontes (DataSnapshot) e pelo código de verificação (hash) no rodapé.",
     { size: 8, color: MUTED }
   );
+
+  // ── Assinatura digital e verificação de autenticidade ──
+  if (bundle.verification?.code) {
+    doc.y -= 6;
+    doc.paragraph("Assinatura digital e verificação", { font: doc.bold, size: 9.5, gap: 2 });
+    doc.kv([
+      ["Código de verificação", bundle.verification.code],
+      ["Verifique a autenticidade em", bundle.verification.url],
+    ]);
+    doc.paragraph(
+      "Assinatura digital do responsável técnico: assine este PDF com certificado digital ICP-Brasil ou pela plataforma oficial do Gov.br (gov.br/assinatura-eletronica), conferindo validade jurídica equivalente à assinatura manuscrita (MP 2.200-2/2001 e Lei 14.063/2020), conforme exigido pelas instituições de crédito (ex.: Política de Credenciamento de Avaliadores - Sicoob). A autenticidade e a integridade deste documento podem ser conferidas por qualquer interessado no endereço acima, com o código de verificação, comparando o hash SHA-256 do arquivo recebido.",
+      { size: 8, color: MUTED }
+    );
+  }
 
   return await doc.pdf.save();
 }

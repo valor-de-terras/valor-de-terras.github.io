@@ -235,3 +235,19 @@
   display: inline-block; animation: sp 0.8s linear infinite;
 }
 @keyframes sp { to { transform: rotate(360deg); } }
+
+.signBox {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--vt-line, #e5e5e5);
+}
+.signBox .fileInput {
+  display: block;
+  margin: 0.6rem 0;
+  font-size: 0.85rem;
+}
+.fileInput {
+  display: block;
+  margin: 0.6rem 0;
+  font-size: 0.85rem;
+}

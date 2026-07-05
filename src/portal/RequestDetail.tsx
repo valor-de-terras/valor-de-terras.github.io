@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import MapView from "../components/demo/MapView";
 import {
   assignReview, generateReport, getBundle, reportLink, saveReview, submitArt,
-  uploadArtPdf, geometryToFeature, type RequestBundle,
+  uploadArtPdf, submitSignedReport, geometryToFeature, type RequestBundle,
 } from "../lib/portal";
 import { fmtArea, fmtBRL, fmtNum } from "../lib/format";
 import { statusView, PURPOSE_LABELS } from "./status";
@@ -41,6 +41,7 @@ export default function RequestDetail({ requestId, currentUserId, onBack }: Prop
   const [narrative, setNarrative] = useState("");
   const [artNumber, setArtNumber] = useState("");
   const artFileRef = useRef<HTMLInputElement | null>(null);
+  const signedFileRef = useRef<HTMLInputElement | null>(null);
 
   const area = b?.property.area_ha ?? 0;
 
@@ -145,6 +146,17 @@ export default function RequestDetail({ requestId, currentUserId, onBack }: Prop
     setDownloadUrl(url);
     window.open(url, "_blank", "noopener");
   });
+
+  const onSubmitSigned = () => run(async () => {
+    const file = signedFileRef.current?.files?.[0];
+    if (!file) throw new Error("Selecione o PDF do laudo assinado.");
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (!isPdf) throw new Error("O arquivo precisa ser um PDF.");
+    if (file.size > 25 * 1024 * 1024) throw new Error("PDF muito grande (máx. 25 MB).");
+    await submitSignedReport(requestId, file);
+    if (signedFileRef.current) signedFileRef.current.value = "";
+    await load();
+  }, "Laudo assinado registrado com sucesso.");
 
   return (
     <div>
@@ -334,6 +346,31 @@ export default function RequestDetail({ requestId, currentUserId, onBack }: Prop
               <div className={styles.actions}>
                 <button className="vt-btn vt-btn-primary" onClick={onDownload} disabled={busy}>Baixar laudo (PDF)</button>
               </div>
+
+              {mine && (
+                <div className={styles.signBox}>
+                  <div className={styles.sectionTitle}>Assinatura digital</div>
+                  {rep.signature_status === "rt_signed" ? (
+                    <p className={styles.hint}>
+                      ✓ Laudo assinado digitalmente e registrado
+                      {rep.signed_at ? ` em ${new Date(String(rep.signed_at)).toLocaleDateString("pt-BR")}` : ""}.
+                    </p>
+                  ) : (
+                    <>
+                      <p className={styles.hint}>
+                        Baixe o PDF acima, assine com seu certificado ICP-Brasil ou pela plataforma
+                        oficial do <a href="https://www.gov.br/pt-br/servicos/assinatura-eletronica" target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>Gov.br</a> (validade
+                        jurídica, exigida por instituições de crédito), e reenvie o arquivo assinado aqui.
+                        A autenticidade fica verificável pelo código impresso no rodapé.
+                      </p>
+                      <input ref={signedFileRef} type="file" accept="application/pdf" className={styles.fileInput} />
+                      <button className="vt-btn" onClick={onSubmitSigned} disabled={busy}>
+                        {busy ? "Enviando…" : "Registrar laudo assinado"}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

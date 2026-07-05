@@ -215,6 +215,21 @@ export async function reportLink(requestId: string): Promise<string> {
   return data.url as string;
 }
 
+/** Envia o PDF do laudo já assinado digitalmente (Gov.br/ICP-Brasil) do RT. */
+export async function submitSignedReport(requestId: string, file: File): Promise<void> {
+  const b64 = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("Falha ao ler o arquivo"));
+    r.readAsDataURL(file);
+  });
+  const { data, error } = await supabase.functions.invoke("submit-signed-report", {
+    body: { request_id: requestId, pdf_base64: b64 },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+}
+
 export function geometryToFeature(g: Geometry | null): Feature<Geometry> | null {
   if (!g) return null;
   return { type: "Feature", properties: {}, geometry: g };

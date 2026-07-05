@@ -21,6 +21,7 @@ const MyRequests = lazy(() => import("./tracking/MyRequests"));
 const Legal = lazy(() => import("./legal/Legal"));
 const RecoverPassword = lazy(() => import("./portal/RecoverPassword"));
 const AppraisePage = lazy(() => import("./appraise/AppraisePage"));
+const VerifyReport = lazy(() => import("./verify/VerifyReport"));
 
 function RouteShell({ children, label }: { children: ReactNode; label: string }) {
   return (
@@ -48,6 +49,7 @@ export default function App() {
   if (seg === "avaliar") return <RouteShell label="a avaliação"><AppraisePage /></RouteShell>;
   if (seg === "portal") return <RouteShell label="painel"><PortalApp /></RouteShell>;
   if (seg === "pedidos") return <RouteShell label="seus pedidos"><MyRequests /></RouteShell>;
+  if (seg === "verificar") return <RouteShell label="a verificação"><VerifyReport /></RouteShell>;
   if (seg === "privacidade") return <RouteShell label="a página"><Legal /></RouteShell>;
 
   return (
