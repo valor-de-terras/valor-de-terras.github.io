@@ -118,6 +118,8 @@ interface Bundle {
   } | null;
   // código de verificação pública + URL (assinatura/autenticidade).
   verification?: { code: string; url: string } | null;
+  // fotos do relatório fotográfico (art. II.7), já baixadas do storage.
+  photos?: Array<{ bytes: Uint8Array; caption?: string | null }>;
 }
 
 // ── cursor de layout com quebra automática de página ─────────────────────────
@@ -317,9 +319,9 @@ const PURPOSE_LABELS: Record<string, string> = {
   outro: "Outro",
 };
 
-// ── seção 8: sinais de aptidão, escoamento e conformidade (tese de investimento) ──
+// ── seção de sinais: aptidão, escoamento e conformidade (tese de investimento) ──
 // Retorna true se desenhou a seção (para o chamador numerar a seção seguinte).
-function renderSignals(doc: Doc, signals: Bundle["signals"]): boolean {
+function renderSignals(doc: Doc, signals: Bundle["signals"], sec: string): boolean {
   if (!signals) return false;
   const via = signals.viability as Record<string, unknown> | null | undefined;
   const zarc = signals.zarc as Record<string, unknown> | null | undefined;
@@ -339,7 +341,7 @@ function renderSignals(doc: Doc, signals: Bundle["signals"]): boolean {
     (spread && spread.available);
   if (!hasAny) return false;
 
-  doc.heading("8", "Aptidão, escoamento e conformidade");
+  doc.heading(sec, "Aptidão, escoamento e conformidade");
   doc.paragraph(
     "Fatores de contexto econômico e socioambiental do imóvel, apurados sobre dados públicos abertos na data-base. Complementam o valor de mercado com a leitura de vocação produtiva, logística de escoamento e conformidade regulatória (relevante para protocolos de mercado e crédito).",
     { size: 8.8 }
@@ -503,6 +505,50 @@ function renderSignals(doc: Doc, signals: Bundle["signals"]): boolean {
       ["l", "r"]
     );
     doc.paragraph(String(spread.nota ?? ""), { size: 8, color: MUTED });
+  }
+  return true;
+}
+
+// ── seção: relatório fotográfico (art. II.7; imagens da vistoria) ─────────────
+async function renderPhotos(doc: Doc, photos: Bundle["photos"], sec: string): Promise<boolean> {
+  const list = (photos ?? []).filter((p) => p?.bytes?.length);
+  if (!list.length) return false;
+
+  doc.heading(sec, "Relatório fotográfico");
+  doc.paragraph(
+    "Registro fotográfico da vistoria e caracterização do imóvel (NBR 14.653), com imagens nítidas, atendendo à exigência de relatório fotográfico das instituições de crédito.",
+    { size: 8.8 }
+  );
+
+  const gap = 12;
+  const cellW = (PW - 2 * M - gap) / 2;
+  const imgH = cellW * 0.7;
+  const capH = 15;
+
+  for (let i = 0; i < list.length; i += 2) {
+    doc.ensure(imgH + capH + gap);
+    const rowTop = doc.y;
+    for (let c = 0; c < 2 && i + c < list.length; c++) {
+      const ph = list[i + c];
+      const b = ph.bytes;
+      let img;
+      try {
+        if (b[0] === 0xff && b[1] === 0xd8) img = await doc.pdf.embedJpg(b);
+        else if (b[0] === 0x89 && b[1] === 0x50) img = await doc.pdf.embedPng(b);
+        else continue;
+      } catch (_) {
+        continue; // imagem corrompida: pula a célula
+      }
+      const x = M + c * (cellW + gap);
+      const scale = Math.min(cellW / img.width, imgH / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      doc.page.drawRectangle({ x, y: rowTop - imgH, width: cellW, height: imgH, borderColor: LINE, borderWidth: 0.6, color: rgb(0.98, 0.98, 0.98) });
+      doc.page.drawImage(img, { x: x + (cellW - w) / 2, y: rowTop - imgH + (imgH - h) / 2, width: w, height: h });
+      const cap = ph.caption ? san(ph.caption) : `Foto ${i + c + 1}`;
+      doc.page.drawText(cap.slice(0, 74), { x, y: rowTop - imgH - 11, size: 7.2, font: doc.font, color: MUTED });
+    }
+    doc.y = rowTop - imgH - capH;
   }
   return true;
 }
@@ -739,11 +785,13 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     doc.paragraph(narrative, { size: 9.2 });
   }
 
-  // ── 8. Aptidão, escoamento e conformidade (tese de investimento) ──
-  const hasSignals = renderSignals(doc, bundle.signals);
+  // ── Seções finais com numeração dinâmica (8 = sinais; depois fotos; depois RT) ──
+  let sec = 8;
+  if (renderSignals(doc, bundle.signals, String(sec))) sec++;
+  if (await renderPhotos(doc, bundle.photos, String(sec))) sec++;
 
-  // ── Responsabilidade técnica (9 se a seção 8 foi desenhada, senão 8) ──
-  doc.heading(hasSignals ? "9" : "8", "Responsabilidade técnica");
+  // ── Responsabilidade técnica ──
+  doc.heading(String(sec), "Responsabilidade técnica");
   doc.kv([
     ["Responsável técnico", String(tech.full_name ?? "-")],
     ["Registro CREA", `${String(tech.crea_number ?? "-")}${tech.uf ? " / " + tech.uf : ""}`],

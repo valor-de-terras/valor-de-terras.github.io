@@ -251,3 +251,56 @@
   margin: 0.6rem 0;
   font-size: 0.85rem;
 }
+
+.photoBox { margin: 0.4rem 0; }
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.6rem;
+  margin: 0.7rem 0;
+}
+.photoCell {
+  position: relative;
+  border: 1px solid var(--vt-line, #ddd);
+  border-radius: var(--vt-radius-sm, 6px);
+  overflow: hidden;
+  background: var(--vt-paper-2, #f7f7f5);
+}
+.photoImg {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #eee;
+}
+.photoCap {
+  display: block;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.68rem;
+  color: var(--vt-ink-faint, #667);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.photoDel {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.7rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.photoAdd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.photoAdd .input { flex: 1; min-width: 12rem; }

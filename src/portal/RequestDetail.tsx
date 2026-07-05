@@ -6,6 +6,7 @@ import {
 } from "../lib/portal";
 import { fmtArea, fmtBRL, fmtNum } from "../lib/format";
 import { statusView, PURPOSE_LABELS } from "./status";
+import ReportPhotos from "./ReportPhotos";
 import styles from "./portal.module.css";
 
 interface Props {
@@ -288,6 +289,10 @@ export default function RequestDetail({ requestId, currentUserId, onBack }: Prop
                   <div className={styles.actions}>
                     <button className="vt-btn vt-btn-ghost" onClick={onSaveDraft} disabled={busy}>Salvar rascunho</button>
                   </div>
+
+                  <div style={{ borderTop: "1px solid var(--vt-line)", margin: "1rem 0 0.9rem" }} />
+
+                  <ReportPhotos requestId={requestId} photos={b.photos ?? []} onChanged={load} />
 
                   <div style={{ borderTop: "1px solid var(--vt-line)", margin: "1rem 0 0.9rem" }} />
 

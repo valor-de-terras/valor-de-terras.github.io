@@ -88,10 +88,29 @@ Deno.serve(async (req: Request) => {
     ? `${origin2}/#/verificar`
     : "https://valor-de-terras.github.io/#/verificar";
 
+  // 2c) baixa as fotos do relatório fotográfico (art. II.7) via service role, para
+  // embutir no PDF. Falha individual (arquivo ausente/ilegível) apenas pula a foto.
+  const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+  const photoMeta = (Array.isArray(bundle.photos) ? bundle.photos : []).slice(0, 12);
+  const fetched = await Promise.all(photoMeta.map(async (ph: unknown) => {
+    const rec = ph as Record<string, unknown>;
+    const p = rec.path as string | undefined;
+    if (!p || !p.startsWith(`${requestId}/`)) return null;
+    try {
+      const { data, error } = await admin.storage.from("report-photos").download(p);
+      if (error || !data) return null;
+      return { bytes: new Uint8Array(await data.arrayBuffer()), caption: rec.caption as string | null };
+    } catch (_) {
+      return null;
+    }
+  }));
+  const photos = fetched.filter((x): x is { bytes: Uint8Array; caption: string | null } => x !== null);
+
   const bundleWithSignals = {
     ...bundle,
     signals: { viability, zarc, outorgas, compliance, logistics, amenities, spread },
     verification: { code: verificationCode, url: `${verifyBase}?c=${verificationCode}` },
+    photos,
   };
 
   // 3) monta o PDF
@@ -104,7 +123,6 @@ Deno.serve(async (req: Request) => {
   }
 
   // 4) grava no bucket privado via SERVICE ROLE (dono determinístico; upsert idempotente)
-  const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
   const path = `${requestId}/laudo-${requestId.slice(0, 8)}.pdf`;
   const up = await admin.storage.from("report-pdfs").upload(path, pdfBytes, {
     contentType: "application/pdf",

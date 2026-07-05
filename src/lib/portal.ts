@@ -49,6 +49,7 @@ export interface RequestBundle {
   comparables: Array<Record<string, unknown>>;
   enrichment: Array<{ key: string; source: string | null; payload: Record<string, unknown> }>;
   report: Record<string, unknown> | null;
+  photos?: ReportPhoto[];
   technician: {
     full_name?: string | null;
     email?: string | null;
@@ -213,6 +214,60 @@ export async function reportLink(requestId: string): Promise<string> {
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
   return data.url as string;
+}
+
+export interface ReportPhoto {
+  id: string;
+  path: string;
+  caption: string | null;
+  sort: number;
+  lat: number | null;
+  lon: number | null;
+}
+
+/** Reduz a imagem (máx. 1600px, JPEG q~0.82) no cliente antes de subir. */
+async function downscaleImage(file: File, maxDim = 1600, quality = 0.82): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const w = Math.max(1, Math.round(bitmap.width * scale));
+  const h = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas indisponível para processar a imagem");
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close?.();
+  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", quality));
+  if (!blob) throw new Error("Falha ao processar a imagem");
+  return blob;
+}
+
+/** Sobe uma foto do relatório fotográfico: reduz, grava no bucket e registra. */
+export async function uploadReportPhoto(requestId: string, file: File, caption?: string): Promise<void> {
+  const blob = await downscaleImage(file);
+  const path = `${requestId}/${crypto.randomUUID()}.jpg`;
+  const upErr = (await supabase.storage.from("report-photos").upload(path, blob, {
+    contentType: "image/jpeg",
+    upsert: false,
+  })).error;
+  if (upErr) throw upErr;
+  const { error } = await supabase.rpc("register_report_photo", {
+    p_request_id: requestId,
+    p_storage_path: path,
+    p_caption: caption?.trim() || null,
+  });
+  if (error) throw error;
+}
+
+export async function deleteReportPhoto(photoId: string): Promise<void> {
+  const { error } = await supabase.rpc("delete_report_photo", { p_photo_id: photoId });
+  if (error) throw error;
+}
+
+export async function photoSignedUrl(path: string): Promise<string | null> {
+  const { data } = await supabase.storage.from("report-photos").createSignedUrl(path, 3600);
+  return data?.signedUrl ?? null;
 }
 
 /** Envia o PDF do laudo já assinado digitalmente (Gov.br/ICP-Brasil) do RT. */
