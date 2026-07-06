@@ -304,3 +304,12 @@
   align-items: center;
 }
 .photoAdd .input { flex: 1; min-width: 12rem; }
+
+.visitBox { margin: 0.4rem 0; }
+.benfRow {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+.benfRow .input { flex: 1; min-width: 5rem; }

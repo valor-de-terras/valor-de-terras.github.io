@@ -50,6 +50,7 @@ export interface RequestBundle {
   enrichment: Array<{ key: string; source: string | null; payload: Record<string, unknown> }>;
   report: Record<string, unknown> | null;
   photos?: ReportPhoto[];
+  field_visit?: FieldVisitData | null;
   technician: {
     full_name?: string | null;
     email?: string | null;
@@ -223,6 +224,33 @@ export interface ReportPhoto {
   sort: number;
   lat: number | null;
   lon: number | null;
+}
+
+export interface Benfeitoria {
+  tipo: string;
+  descricao: string;
+  area_m2: string;
+  estado: string;
+}
+export interface FieldVisitData {
+  visited_at?: string | null;
+  area_confirmada?: boolean | null;
+  area_observacao?: string | null;
+  estado_conservacao?: string | null;
+  uso_observado?: string | null;
+  acesso_observado?: string | null;
+  recursos_hidricos?: string | null;
+  benfeitorias?: Benfeitoria[];
+  ressalvas?: string | null;
+}
+
+/** Registra/atualiza a vistoria in loco (Frente F). */
+export async function saveFieldVisit(requestId: string, data: FieldVisitData): Promise<void> {
+  const { error } = await supabase.rpc("save_field_visit", {
+    p_request_id: requestId,
+    p_data: data,
+  });
+  if (error) throw error;
 }
 
 /** Reduz a imagem (máx. 1600px, JPEG q~0.82) no cliente antes de subir. */

@@ -7,6 +7,7 @@ import {
 import { fmtArea, fmtBRL, fmtNum } from "../lib/format";
 import { statusView, PURPOSE_LABELS } from "./status";
 import ReportPhotos from "./ReportPhotos";
+import FieldVisit from "./FieldVisit";
 import styles from "./portal.module.css";
 
 interface Props {
@@ -289,6 +290,10 @@ export default function RequestDetail({ requestId, currentUserId, onBack }: Prop
                   <div className={styles.actions}>
                     <button className="vt-btn vt-btn-ghost" onClick={onSaveDraft} disabled={busy}>Salvar rascunho</button>
                   </div>
+
+                  <div style={{ borderTop: "1px solid var(--vt-line)", margin: "1rem 0 0.9rem" }} />
+
+                  <FieldVisit requestId={requestId} initial={b.field_visit} onSaved={load} />
 
                   <div style={{ borderTop: "1px solid var(--vt-line)", margin: "1rem 0 0.9rem" }} />
 

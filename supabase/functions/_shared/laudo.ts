@@ -120,6 +120,8 @@ interface Bundle {
   verification?: { code: string; url: string } | null;
   // fotos do relatório fotográfico (art. II.7), já baixadas do storage.
   photos?: Array<{ bytes: Uint8Array; caption?: string | null }>;
+  // vistoria in loco (Frente F, art. II.11): registro estruturado da inspeção.
+  field_visit?: Record<string, unknown> | null;
 }
 
 // ── cursor de layout com quebra automática de página ─────────────────────────
@@ -509,6 +511,60 @@ function renderSignals(doc: Doc, signals: Bundle["signals"], sec: string): boole
   return true;
 }
 
+// ── seção: vistoria in loco (Frente F, art. II.11) ────────────────────────────
+const ESTADO_LABEL: Record<string, string> = {
+  otimo: "Ótimo", bom: "Bom", regular: "Regular", ruim: "Ruim", na: "Não se aplica",
+};
+
+function renderVisit(doc: Doc, visit: Bundle["field_visit"], sec: string): boolean {
+  if (!visit) return false;
+  const v = visit as Record<string, unknown>;
+  // sem nenhum dado preenchido, não renderiza
+  const benf = Array.isArray(v.benfeitorias) ? (v.benfeitorias as Array<Record<string, unknown>>) : [];
+  const hasAny = v.visited_at || v.area_confirmada != null || v.estado_conservacao ||
+    v.uso_observado || v.acesso_observado || v.recursos_hidricos || v.ressalvas || benf.length;
+  if (!hasAny) return false;
+
+  doc.heading(sec, "Vistoria in loco");
+  doc.paragraph(
+    "Inspeção presencial do imóvel pelo responsável técnico (NBR 14.653), verificando área, benfeitorias, estado de conservação e uso, atendendo à exigência de vistoria das instituições de crédito.",
+    { size: 8.8 }
+  );
+
+  const kv: [string, string][] = [];
+  if (v.visited_at) kv.push(["Data da vistoria", fmtDate(String(v.visited_at))]);
+  if (v.area_confirmada != null) {
+    kv.push(["Área confirmada em campo",
+      (v.area_confirmada ? "Sim" : "Não") + (v.area_observacao ? ` - ${String(v.area_observacao)}` : "")]);
+  }
+  if (v.estado_conservacao) kv.push(["Estado de conservação", ESTADO_LABEL[String(v.estado_conservacao)] ?? String(v.estado_conservacao)]);
+  if (v.uso_observado) kv.push(["Uso observado", String(v.uso_observado)]);
+  if (v.acesso_observado) kv.push(["Acesso observado", String(v.acesso_observado)]);
+  if (v.recursos_hidricos) kv.push(["Recursos hídricos", String(v.recursos_hidricos)]);
+  if (kv.length) doc.kv(kv);
+
+  if (benf.length) {
+    doc.paragraph("Benfeitorias identificadas", { font: doc.bold, size: 9.5, gap: 2 });
+    doc.table(
+      ["Tipo", "Descrição", "Área", "Estado"],
+      benf.slice(0, 30).map((b) => [
+        String(b.tipo ?? "-"),
+        String(b.descricao ?? "-"),
+        b.area_m2 != null && b.area_m2 !== "" ? `${b.area_m2} m²` : "-",
+        b.estado ? (ESTADO_LABEL[String(b.estado)] ?? String(b.estado)) : "-",
+      ]),
+      [0.22, 0.46, 0.14, 0.18],
+      ["l", "l", "r", "l"]
+    );
+  }
+
+  if (v.ressalvas) {
+    doc.paragraph("Ressalvas da vistoria", { font: doc.bold, size: 9.5, gap: 2 });
+    doc.paragraph(String(v.ressalvas), { size: 8.8 });
+  }
+  return true;
+}
+
 // ── seção: relatório fotográfico (art. II.7; imagens da vistoria) ─────────────
 async function renderPhotos(doc: Doc, photos: Bundle["photos"], sec: string): Promise<boolean> {
   const list = (photos ?? []).filter((p) => p?.bytes?.length);
@@ -785,9 +841,10 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     doc.paragraph(narrative, { size: 9.2 });
   }
 
-  // ── Seções finais com numeração dinâmica (8 = sinais; depois fotos; depois RT) ──
+  // ── Seções finais com numeração dinâmica (sinais → vistoria → fotos → RT) ──
   let sec = 8;
   if (renderSignals(doc, bundle.signals, String(sec))) sec++;
+  if (renderVisit(doc, bundle.field_visit, String(sec))) sec++;
   if (await renderPhotos(doc, bundle.photos, String(sec))) sec++;
 
   // ── Responsabilidade técnica ──
