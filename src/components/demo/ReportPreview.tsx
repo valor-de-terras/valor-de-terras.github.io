@@ -143,11 +143,15 @@ export default function ReportPreview({
               </table>
             </Section>
 
-            <Section n="4" title="Metodologia e homogeneização">
+            <Section n="4" title="Metodologia e justificativa do método">
               <p>
                 Adotou-se o <strong>método comparativo direto de dados de mercado</strong>
-                (NBR 14.653-2/3, item 8). Os elementos comparativos foram homogeneizados por
-                fatores relativos a relevo, solo/aptidão, uso, acesso e situação, conforme tabela:
+                (NBR 14.653-2/3, item 8), preferencial quando há dados de mercado semelhantes
+                em quantidade e qualidade suficientes. Não se aplicam aqui o método
+                <strong> involutivo</strong> (valor pelo potencial de um empreendimento no
+                melhor uso) nem o <strong>evolutivo</strong> (soma de terreno, construções e
+                benfeitorias com fator de comercialização). Os elementos foram homogeneizados
+                por fatores relativos a relevo, solo/aptidão, uso, acesso e situação:
               </p>
               <table className={styles.factors}>
                 <thead>
@@ -171,7 +175,7 @@ export default function ReportPreview({
               </table>
             </Section>
 
-            <Section n="5" title="Tratamento dos elementos comparativos">
+            <Section n="5" title="Tratamento dos elementos comparativos (dados de mercado)">
               <table className={styles.factors}>
                 <thead>
                   <tr>
@@ -179,6 +183,7 @@ export default function ReportPreview({
                     <th className={styles.num}>Dist.</th>
                     <th className={styles.num}>Área</th>
                     <th>Uso</th>
+                    <th>Referência</th>
                     <th className={styles.num}>R$/ha</th>
                     <th className={styles.num}>Homog.</th>
                   </tr>
@@ -190,15 +195,22 @@ export default function ReportPreview({
                       <td className={styles.num}>{c.distanceKm} km</td>
                       <td className={styles.num}>{fmtNum(c.areaHa)} ha</td>
                       <td>{c.use}</td>
+                      <td>{c.source}</td>
                       <td className={styles.num}>•••</td>
                       <td className={styles.num}>•••</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <p className={styles.footnote}>
+                Nota (NBR 14.653-1, item 3.1.12): dado de mercado é o elemento ou informação
+                disponível em determinado mercado, acompanhado de suas características. Pode ser
+                obtido em anúncios regionais, sites agregadores de imóveis e leilões, entre
+                outras fontes de referência.
+              </p>
             </Section>
 
-            <Section n="6" title="Conclusão — valor de mercado">
+            <Section n="6" title="Conclusão - valor de mercado">
               <div className={styles.conclusionLocked}>
                 <span className={styles.lockGlyph} aria-hidden>🔒</span>
                 <div>

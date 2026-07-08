@@ -122,6 +122,12 @@ interface Bundle {
   photos?: Array<{ bytes: Uint8Array; caption?: string | null }>;
   // vistoria in loco (Frente F, art. II.11): registro estruturado da inspeção.
   field_visit?: Record<string, unknown> | null;
+  // liquidez / tempo de exposição de mercado (Frente C): mediana de dias no mercado
+  // na região: sinal de "tempo e expectativa" para realização do valor (NBR 14.653-1).
+  liquidity?: Record<string, unknown> | null;
+  // análise da matrícula (Frente E): ônus/gravames apurados por regras, para compor a
+  // "documentação utilizada" (NBR 14.653-1, item 9-e).
+  matricula?: Array<Record<string, unknown>> | null;
 }
 
 // ── cursor de layout com quebra automática de página ─────────────────────────
@@ -320,6 +326,202 @@ const PURPOSE_LABELS: Record<string, string> = {
   cpr: "CPR / crédito rural",
   outro: "Outro",
 };
+
+// Finalidades para as quais a boa prática pericial e a jurisprudência recomendam buscar
+// o Grau III (Rigoroso): perícias judiciais, desapropriações e operações complexas.
+// (A NBR 14.653 não vincula grau a finalidade; o grau decorre dos dados e do tratamento.)
+const RIGOROUS_PURPOSES = new Set(["judicial"]);
+
+// ── Grau de Fundamentação (NBR 14.653): tabela-referência de graus de precisão ──
+// A quantidade de "dados de mercado efetivamente utilizados" e o tratamento aplicado
+// enquadram o laudo em um dos três graus. O enquadramento definitivo é ato do RT.
+interface FundGrade { g: string; nome: string; amostras: string; uso: string }
+const FUND_GRADES: FundGrade[] = [
+  { g: "I", nome: "Expedito", amostras: "3 a 5",
+    uso: "Estimativas rápidas; maior margem de erro." },
+  { g: "II", nome: "Normal", amostras: "5 a 6",
+    uso: "Garantias bancárias e inventários; dados validados pelo profissional." },
+  { g: "III", nome: "Rigoroso", amostras: "12 a 18",
+    uso: "Ações judiciais, desapropriações e operações complexas; maior quantidade de dados e rigor de identificação e ajuste. A inferência estatística, quando adotada, habilita o grau de precisão." },
+];
+
+/** Grau de fundamentação sugerido a partir do nº de dados de mercado (informativo). */
+function suggestFundGrade(n: number): string {
+  if (n >= 12) return "III";
+  if (n >= 5) return "II";
+  if (n >= 3) return "I";
+  return "";
+}
+
+// ── Anexo: classes de capacidade de uso do solo (SBCS, adaptado de Lepsch) ──────
+// Referência técnica fixa citada na caracterização do bem (NBR 14.653-1, item 9-d);
+// oito classes agrupadas (A cultiváveis, B pastagem/reflorestamento, C preservação).
+interface SoilClass { classe: string; grupo: string; desc: string }
+const SOIL_CLASSES: SoilClass[] = [
+  { classe: "I", grupo: "A",
+    desc: "Cultiváveis, sem problemas especiais de conservação. Grãos com altas produtividades." },
+  { classe: "II", grupo: "A",
+    desc: "Cultiváveis com problemas simples de conservação. Grãos com produtividades acima da média." },
+  { classe: "III", grupo: "A",
+    desc: "Cultiváveis com problemas complexos de conservação. Grãos com produtividades médias." },
+  { classe: "IV", grupo: "A",
+    desc: "Cultiváveis ocasionalmente ou em extensão limitada, com sérios problemas de conservação. Grãos (médias) e pastagem para gado de leite." },
+  { classe: "V", grupo: "B",
+    desc: "Pastagens e/ou reflorestamento sem prática especial; cultiváveis só em casos muito especiais. Áreas alagáveis não sistematizadas." },
+  { classe: "VI", grupo: "B",
+    desc: "Pastagens e/ou reflorestamento com problemas simples; culturas permanentes protetoras. Pastagem de corte em áreas planas a suave onduladas, porém frágeis." },
+  { classe: "VII", grupo: "B",
+    desc: "Pastagens ou reflorestamento com problemas complexos. Pastagens degradadas ou declivosas e reflorestamentos." },
+  { classe: "VIII", grupo: "C",
+    desc: "Impróprias para cultura, pastagem ou reflorestamento; abrigo e proteção da fauna e flora, recreação ou armazenamento de água. Vegetação natural." },
+];
+
+// ── seção: documentação utilizada (NBR 14.653-1, item 9-e) ────────────────────
+// Lista objetiva dos documentos que embasaram a avaliação (origem da geometria, CAR,
+// ART e, quando enviada, a matrícula com o resultado da triagem de ônus da Frente E).
+function renderDocumentos(
+  doc: Doc,
+  args: { origin: string | null; carCode: string; artNumber: string; matricula: Bundle["matricula"] },
+  sec: string,
+): void {
+  doc.heading(sec, "Documentação utilizada");
+  doc.paragraph(
+    "Relação dos documentos e bases que embasaram a avaliação, para rastreabilidade e defensabilidade (NBR 14.653-1, item 9-e).",
+    { size: 8.8 }
+  );
+  const rows: string[][] = [];
+  rows.push([
+    "Geometria do imóvel",
+    args.origin === "car"
+      ? "Perímetro do CAR/SICAR (base georreferenciada oficial)"
+      : "Arquivo georreferenciado informado pelo solicitante",
+  ]);
+  rows.push(["Cadastro Ambiental Rural (CAR)", args.carCode && args.carCode !== "-" ? args.carCode : "Não informado"]);
+  rows.push(["ART - Anotação de Responsabilidade Técnica", args.artNumber || "A informar pelo responsável técnico"]);
+
+  const mats = Array.isArray(args.matricula) ? args.matricula : [];
+  if (mats.length) {
+    mats.forEach((m, i) => {
+      const rec = m as Record<string, unknown>;
+      const nP = Number(rec.n_passivos ?? 0);
+      const nA = Number(rec.n_ativos ?? 0);
+      const resumo = nP === 0
+        ? "Sem ônus/gravame aparente na triagem automática"
+        : `${nP} apontamento(s), ${nA} possivelmente ativo(s) (triagem automática por regras)`;
+      // não ecoa o nome do arquivo enviado (pode conter PII); rótulo genérico + índice
+      rows.push([`Matrícula do imóvel${mats.length > 1 ? ` (documento ${i + 1})` : ""}`, resumo]);
+    });
+  } else {
+    rows.push(["Matrícula do imóvel", "Não anexada / análise dominial a cargo do responsável técnico"]);
+  }
+  doc.table(["Documento", "Descrição / situação"], rows, [0.34, 0.66]);
+  if (mats.length) {
+    doc.paragraph(
+      "A triagem de ônus da matrícula é automática (por regras) e não substitui a análise jurídica; a leitura dominial definitiva é do responsável técnico.",
+      { size: 8, color: MUTED }
+    );
+  }
+}
+
+// ── seção: memória de cálculo e especificação da avaliação (NBR 9-h, 9-j) ──────
+// Consolida o tratamento estatístico (saneamento + IC80 + CV) como memória de cálculo
+// e apresenta a tabela dos graus de fundamentação/precisão, com o enquadramento
+// sugerido pelo nº de dados de mercado e o alerta de Grau III para finalidades rigorosas.
+function renderEspecificacao(
+  doc: Doc,
+  args: {
+    sec: string;
+    nComps: number;
+    nSan: number | null;
+    nOut: number | null;
+    precisao: string;
+    cvPct: number | null;
+    ic80Low: number | null;
+    ic80High: number | null;
+    grade: string;
+    purposeKey: string;
+  },
+): void {
+  doc.heading(args.sec, "Memória de cálculo e especificação da avaliação");
+
+  // memória de cálculo (9-h): descreve o caminho do valor central e da faixa
+  const memParts: string[] = [];
+  memParts.push(
+    `O valor unitário resulta do preço-base regional homogeneizado pelos fatores da seção anterior sobre ${args.nComps} dado(s) de mercado.`
+  );
+  if (args.nSan != null && args.nComps >= 3) {
+    memParts.push(
+      `Aplicou-se o critério de Chauvenet para saneamento da amostra (${args.nSan} dado(s) mantido(s)${args.nOut ? `, ${args.nOut} excluído(s) como discrepante(s)` : ", nenhum excluído"}).`
+    );
+  }
+  if (args.precisao) {
+    const icTxt = args.ic80Low != null && args.ic80High != null
+      ? ` (${fmtBRL(args.ic80Low)} a ${fmtBRL(args.ic80High)} no valor total)`
+      : "";
+    memParts.push(
+      `A dispersão foi medida pelo coeficiente de variação${args.cvPct != null ? ` (CV ${args.cvPct.toFixed(1)}%)` : ""} e por intervalo de confiança de 80% pela distribuição t de Student${icTxt}.`
+    );
+  } else if (args.nComps < 3) {
+    memParts.push(
+      "Com menos de três dados de mercado não se aplica tratamento estatístico inferencial; a faixa apresentada é comercial (heurística), sem enquadramento de precisão."
+    );
+  }
+  doc.paragraph(memParts.join(" "), { size: 8.8 });
+
+  // especificação (9-j): tabela de graus + enquadramento
+  doc.paragraph("Graus de fundamentação e precisão (NBR 14.653)", { font: doc.bold, size: 9.5, gap: 2 });
+  doc.table(
+    ["Grau", "Denominação", "Nº de dados", "Aplicação típica"],
+    FUND_GRADES.map((f) => [`Grau ${f.g}`, f.nome, f.amostras, f.uso]),
+    [0.1, 0.15, 0.15, 0.6],
+    ["l", "l", "l", "l"]
+  );
+  doc.paragraph(
+    "As denominações (Expedito/Normal/Rigoroso) e as faixas de quantidade são referência didática usual; a NBR 14.653 identifica os graus como I, II e III e fixa a quantidade mínima de dados (respectivamente 3, 5 e 12 no tratamento por fatores) além da pontuação de fundamentação. O grau efetivo é enquadrado pelo responsável técnico.",
+    { size: 8, color: MUTED }
+  );
+
+  const sug = suggestFundGrade(args.nComps);
+  const especLinhas: [string, string][] = [];
+  especLinhas.push(["Dados de mercado efetivamente utilizados", `${args.nComps}`]);
+  especLinhas.push([
+    "Grau de fundamentação (RT)",
+    args.grade ? `Grau ${args.grade}` : (sug ? `sugerido Grau ${sug} pelo nº de dados; a enquadrar pelo RT` : "a enquadrar pelo responsável técnico"),
+  ]);
+  if (args.precisao) {
+    especLinhas.push(["Grau de precisão (calculado)", `Grau ${args.precisao}${args.cvPct != null ? ` - CV ${args.cvPct.toFixed(1)}%` : ""}`]);
+  }
+  doc.kv(especLinhas);
+
+  if (RIGOROUS_PURPOSES.has(args.purposeKey)) {
+    const atendeIII = (args.grade && args.grade.toUpperCase() === "III") || args.precisao === "III";
+    doc.paragraph(
+      atendeIII
+        ? "Para uso judicial (perícia / desapropriação / operações complexas), a boa prática pericial e a jurisprudência recomendam o Grau III (Rigoroso), com maior quantidade de dados (tipicamente 12 a 18) e rigor de tratamento. Confirme o enquadramento no ato da assinatura."
+        : "Atenção: para uso judicial (perícia / desapropriação / operações complexas), a boa prática pericial e a jurisprudência recomendam buscar o Grau III (Rigoroso), com maior quantidade de dados (tipicamente 12 a 18) e rigor de tratamento. O enquadramento no grau decorre dos dados e do tratamento e é ato do responsável técnico; a amostra atual pode ser insuficiente. Amplie a pesquisa de dados de mercado antes de firmar o laudo para uso judicial.",
+      { size: 8.5, color: !atendeIII ? ACCENT : MUTED }
+    );
+  }
+}
+
+// ── anexo: classes de capacidade de uso do solo (SBCS / Lepsch) ────────────────
+function renderClassesSolo(doc: Doc): void {
+  // n vazio: "Anexo I" é largo demais para o recuo fixo de heading() e sobreporia o título
+  doc.heading("", "Anexo I - Classes de capacidade de uso do solo");
+  doc.paragraph(
+    "Referência para a caracterização agronômica do bem (NBR 14.653-1, item 9-d). Sistema de capacidade de uso das terras (SBCS, adaptado de Lepsch), amplamente difundido no Brasil; a Classe V é de uso bastante restrito pela legislação. As demais classes orientam a aptidão e a produtividade esperadas.",
+    { size: 8.8 }
+  );
+  // parágrafos (não doc.table): a descrição excede a largura da célula e seria truncada com ".."
+  for (const s of SOIL_CLASSES) {
+    doc.paragraph(`Classe ${s.classe} - Grupo ${s.grupo}`, { font: doc.bold, size: 8.8, gap: 1 });
+    doc.paragraph(s.desc, { size: 8.5, gap: 5 });
+  }
+  doc.paragraph(
+    "Grupo A: terras cultiváveis (Classes I a IV). Grupo B: adaptadas a pastagem e/ou reflorestamento (Classes V a VII). Grupo C: preservação da fauna e flora (Classe VIII).",
+    { size: 8, color: MUTED }
+  );
+}
 
 // ── seção de sinais: aptidão, escoamento e conformidade (tese de investimento) ──
 // Retorna true se desenhou a seção (para o chamador numerar a seção seguinte).
@@ -678,10 +880,15 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
   p.drawRectangle({ x: M, y: doc.y - 26, width: PW - 2 * M, height: 30, color: BG, borderColor: LINE, borderWidth: 1 });
   let fundTxt = grade
     ? `Fundamentação NBR 14.653-3: Grau ${grade}`
-    : "Fundamentação NBR 14.653-3: a enquadrar pelo responsável técnico";
+    : "Fundamentação NBR 14.653-3: a enquadrar pelo RT";
   if (precisao) fundTxt += ` - Precisão Grau ${precisao}`;
   if (cvPct != null) fundTxt += ` - CV ${cvPct.toFixed(1)}%`;
-  p.drawText(san(fundTxt), { x: M + 10, y: doc.y - 15, size: 9, font: doc.bold, color: BRAND });
+  // trunca para nunca colidir com o rótulo "Laudo No" à direita
+  const fundMaxW = (PW - M - 120) - (M + 10) - 8;
+  let fundStr = san(fundTxt);
+  while (fundStr.length > 4 && doc.bold.widthOfTextAtSize(fundStr + "..", 8) > fundMaxW) fundStr = fundStr.slice(0, -1);
+  if (fundStr !== san(fundTxt)) fundStr += "..";
+  p.drawText(fundStr, { x: M + 10, y: doc.y - 15, size: 8, font: doc.bold, color: BRAND });
   p.drawText(san(`Laudo No ${shortId}`), { x: PW - M - 120, y: doc.y - 15, size: 10, font: doc.bold, color: INK });
   doc.y -= 44;
 
@@ -723,8 +930,15 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     ["Contato", [contactEmail, contactPhone].filter(Boolean).join("  -  ") || "-"],
   ]);
 
-  // ── 3. Fontes de dados ──
-  doc.heading("3", "Pressupostos, ressalvas e fontes de dados");
+  // ── 3. Documentação utilizada (NBR 9-e) ── (renderDocumentos imprime o próprio heading)
+  renderDocumentos(
+    doc,
+    { origin: prop.origin, carCode: String(prop.car_code ?? "-"), artNumber, matricula: bundle.matricula },
+    "3",
+  );
+
+  // ── 4. Fontes de dados ──
+  doc.heading("4", "Pressupostos, ressalvas e fontes de dados");
   doc.paragraph(
     "A avaliação apoia-se em dados públicos abertos, congelados na data-base (DataSnapshot) para rastreabilidade e defensabilidade. Fontes consultadas:"
   );
@@ -735,14 +949,31 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     [0.22, 0.26, 0.52]
   );
 
-  // ── 4. Diagnóstico ──
-  doc.heading("4", "Caracterização e diagnóstico do imóvel");
+  // ── 5. Diagnóstico ──
+  doc.heading("5", "Caracterização e diagnóstico do imóvel");
   doc.kv(layers.map((l) => [l.label, l.result || "-"] as [string, string]));
-
-  // ── 5. Metodologia e homogeneização ──
-  doc.heading("5", "Metodologia e homogeneização");
   doc.paragraph(
-    "Adotou-se o método comparativo direto de dados de mercado (NBR 14.653-2/3). Os elementos foram homogeneizados por fatores relativos a relevo, solo/aptidão, uso, clima, acesso e situação. Fatores aplicados:"
+    "A aptidão agronômica do bem é lida à luz das classes de capacidade de uso do solo (SBCS/Lepsch) reproduzidas no Anexo I.",
+    { size: 8, color: MUTED }
+  );
+
+  // ── 6. Metodologia e justificativa do método ──
+  doc.heading("6", "Metodologia e justificativa do método");
+  doc.paragraph(
+    "Adotou-se o método comparativo direto de dados de mercado (NBR 14.653-2/3), preferencial sempre que há dados de mercado semelhantes em quantidade e qualidade suficientes, como é o caso de imóveis rurais em região com oferta observável. Justifica-se a escolha e a não adoção dos demais métodos:"
+  );
+  // parágrafos (não doc.kv): kv desenha só a 1ª linha do valor e truncaria a justificativa
+  const metodos: [string, string][] = [
+    ["Comparativo direto (adotado)", "Confronta o bem com dados de mercado semelhantes, homogeneizados por fatores; é o método de eleição quando há amostra de mercado."],
+    ["Involutivo (não adotado)", "Estima o valor pelo potencial de um empreendimento no melhor uso (receita de venda menos custos, prazo e lucro); aplica-se a glebas com vocação de incorporação/loteamento, não à terra rural em uso corrente."],
+    ["Evolutivo (não adotado)", "Soma terreno, construções e benfeitorias com fator de comercialização; usa-se quando o valor das partes edificadas domina, o que não é o caso do imóvel rural avaliando."],
+  ];
+  for (const [label, body] of metodos) {
+    doc.paragraph(label, { font: doc.bold, size: 9.2, gap: 1 });
+    doc.paragraph(body, { size: 9, gap: 6 });
+  }
+  doc.paragraph(
+    "Os elementos foram homogeneizados por fatores relativos a relevo, solo/aptidão, uso, clima, acesso e situação. Fatores aplicados:"
   );
   const factorRows = layers
     .filter((l) => Math.abs(l.factor - 1) > 1e-9)
@@ -753,23 +984,33 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     doc.paragraph("Nenhum fator relevante desviou da unidade nesta amostra.", { color: MUTED, size: 9 });
   }
 
-  // ── 6. Comparativos ──
-  doc.heading("6", "Tratamento dos elementos comparativos");
+  // ── 7. Comparativos (dados de mercado) ──
+  doc.heading("7", "Tratamento dos elementos comparativos");
   const comps = bundle.comparables;
+  doc.paragraph(
+    "Elementos comparativos (dados de mercado) tratados por homogeneização. Referência indica a fonte e o ano do dado utilizado:",
+    { size: 8.8 }
+  );
   doc.table(
-    ["#", "Dist.", "Área", "Uso", "R$/ha", "Homog."],
+    ["#", "Dist.", "Área", "Uso", "Referência", "R$/ha", "Homog."],
     comps.map((c, i) => [
       String(i + 1),
       `${fmtNum(c.distance_km as number, 1)} km`,
       `${fmtNum(c.area_ha as number)} ha`,
       String(c.land_use ?? "-"),
+      String(c.source ?? "-"),
       fmtBRL(c.price_per_ha as number),
       fmtBRL(c.homogenized_price_per_ha as number),
     ]),
-    [0.06, 0.12, 0.14, 0.32, 0.18, 0.18],
-    ["l", "r", "r", "l", "r", "r"]
+    [0.05, 0.1, 0.11, 0.22, 0.22, 0.15, 0.15],
+    ["l", "r", "r", "l", "l", "r", "r"]
   );
-  let statTxt = `Comparativos utilizados: ${comps.length}. Fonte predominante: ${String(comps[0]?.source ?? "DERAL/SEAB-PR")}.`;
+  // Nota NBR 14.653-1, item 3.1.12: definição de "dado de mercado".
+  doc.paragraph(
+    "Nota (NBR 14.653-1, item 3.1.12): dado de mercado é o elemento ou informação disponível em determinado mercado, acompanhado de suas características. Pode ser obtido em anúncios regionais, sites agregadores de imóveis e leilões, entre outras fontes de referência.",
+    { size: 8, color: MUTED }
+  );
+  let statTxt = `Dados de mercado utilizados: ${comps.length}. Fonte predominante: ${String(comps[0]?.source ?? "DERAL/SEAB-PR")}.`;
   if (nSan != null && comps.length >= 3) {
     statTxt += ` Saneamento por critério de Chauvenet: ${nSan} dado(s) mantido(s)${nOut ? `, ${nOut} excluído(s)` : ", nenhum excluído"}.`;
   }
@@ -780,6 +1021,20 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     statTxt += ` Intervalo de confiança de 80% (t de Student)${icTxt}${cvPct != null ? `, CV ${cvPct.toFixed(1)}%` : ""}; Grau de Precisão ${precisao} conforme NBR 14.653.`;
   }
   doc.paragraph(statTxt, { size: 8.5, color: MUTED });
+
+  // Liquidez / tempo de exposição (Frente C): "tempo e expectativa" para realizar o valor.
+  const liq = bundle.liquidity as Record<string, unknown> | null | undefined;
+  if (liq && Number(liq.n ?? 0) >= 3 && liq.mediana_dias != null) {
+    const escopo = String(liq.escopo ?? "");
+    const escopoTxt = escopo === "municipio" ? "no município" : escopo === "uf" ? "no estado (faixa de área)" : "no estado";
+    const meses = Math.round((Number(liq.mediana_dias) / 30) * 10) / 10;
+    const inativos = liq.taxa_inativos != null ? ` Cerca de ${Math.round(Number(liq.taxa_inativos) * 100)}% dos anúncios saíram do ar sem confirmação de venda.` : "";
+    doc.paragraph("Liquidez e tempo de exposição de mercado", { font: doc.bold, size: 9.5, gap: 2 });
+    doc.paragraph(
+      `A mediana de tempo de anúncio de imóveis semelhantes ${escopoTxt} é de ${Math.round(Number(liq.mediana_dias))} dias (~${meses} meses), estimada sobre ${liq.n} anúncio(s).${inativos} Trata-se de indicador de liquidez da região (tempo e expectativa para realização do valor), não do valor do imóvel; complementa a leitura de risco para inventários, quitação de dívidas e prazos de negociação.`,
+      { size: 8.8 }
+    );
+  }
 
   // Frente G: preço-base multi-fonte — declara cada fonte oficial e o peso
   // aplicado (transparência exigida para defensabilidade ABNT)
@@ -814,8 +1069,22 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     }
   }
 
-  // ── 7. Conclusão ──
-  doc.heading("7", "Conclusão - valor de mercado");
+  // ── 8. Memória de cálculo e especificação da avaliação (NBR 9-h, 9-j) ──
+  renderEspecificacao(doc, {
+    sec: "8",
+    nComps: comps.length,
+    nSan,
+    nOut,
+    precisao,
+    cvPct,
+    ic80Low,
+    ic80High,
+    grade,
+    purposeKey,
+  });
+
+  // ── 9. Conclusão ──
+  doc.heading("9", "Conclusão - valor de mercado");
   doc.ensure(88);
   const boxY = doc.y - 78;
   doc.page.drawRectangle({ x: M, y: boxY, width: PW - 2 * M, height: 78, color: BG, borderColor: BRAND, borderWidth: 1.2 });
@@ -842,7 +1111,7 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
   }
 
   // ── Seções finais com numeração dinâmica (sinais → vistoria → fotos → RT) ──
-  let sec = 8;
+  let sec = 10;
   if (renderSignals(doc, bundle.signals, String(sec))) sec++;
   if (renderVisit(doc, bundle.field_visit, String(sec))) sec++;
   if (await renderPhotos(doc, bundle.photos, String(sec))) sec++;
@@ -868,6 +1137,12 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
     "Este laudo foi emitido com base em geometria e dados abertos reais, homogeneizados conforme a NBR 14.653, sob responsabilidade técnica do profissional acima, habilitado no CREA e com ART registrada. A defensabilidade é assegurada pelo congelamento das fontes (DataSnapshot) e pelo código de verificação (hash) no rodapé.",
     { size: 8, color: MUTED }
   );
+  // Local e data da elaboração do laudo (NBR 14.653-1, item 9-m).
+  doc.y -= 4;
+  doc.paragraph(
+    `Local e data de emissão: ${locality !== "-" ? locality : "(local a informar)"}, ${fmtDate(genAt)}.`,
+    { size: 8.5, font: doc.bold }
+  );
 
   // ── Assinatura digital e verificação de autenticidade ──
   if (bundle.verification?.code) {
@@ -882,6 +1157,9 @@ export async function buildLaudoPdf(bundle: Bundle): Promise<Uint8Array> {
       { size: 8, color: MUTED }
     );
   }
+
+  // ── Anexo I: classes de capacidade de uso do solo (referência da caracterização) ──
+  renderClassesSolo(doc);
 
   return await doc.pdf.save();
 }

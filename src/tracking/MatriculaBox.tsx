@@ -48,7 +48,7 @@ export default function MatriculaBox({ requestId }: { requestId: string }) {
           <ul className={styles.mList}>
             {result.passivos.map((p, i) => (
               <li key={i} className={p.status === "ativo" ? styles.mAtivo : styles.mCancel}>
-                {p.tipo} — {p.status}
+                {p.tipo} - {p.status}
               </li>
             ))}
           </ul>
@@ -77,6 +77,11 @@ export default function MatriculaBox({ requestId }: { requestId: string }) {
           onChange={(e) => void onFile(e)}
         />
       </label>
+      <span className={styles.mNote}>
+        Prefira o PDF pesquisável emitido pelo cartório (texto selecionável). Se for
+        digitalização, escaneie em boa resolução (300 dpi ou mais), com o documento reto e
+        nítido, para a leitura automática funcionar.
+      </span>
       {err && <p className={styles.err}>{err}</p>}
     </div>
   );

@@ -323,6 +323,13 @@
   color: #7a2f1d !important;
 }
 
+.footnote {
+  margin-top: 0.6rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--vt-ink-soft, #5b6660);
+}
+
 .mono {
   font-family: var(--vt-font-mono);
 }

@@ -33,6 +33,20 @@ const ITEMS: QA[] = [
     ),
   },
   {
+    id: "metodos",
+    q: "Qual método de avaliação vocês usam, e o que são involutivo e evolutivo?",
+    a: (
+      <p>
+        Usamos o método comparativo direto de dados de mercado: comparamos o imóvel com
+        dados de mercado semelhantes, ajustados por fatores. O método involutivo estima o
+        valor pelo potencial de um empreendimento no melhor uso (receita, custos, prazo e
+        lucro), típico de glebas para incorporação. O evolutivo soma terreno, construções e
+        benfeitorias com um fator de comercialização. Para terra rural em uso corrente, o
+        comparativo é o mais adequado; o laudo formal justifica a escolha.
+      </p>
+    ),
+  },
+  {
     id: "comparaveis",
     q: "De onde vêm os preços de comparáveis, se muitas transações são privadas?",
     a: (

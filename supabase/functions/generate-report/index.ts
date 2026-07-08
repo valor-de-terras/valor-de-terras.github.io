@@ -67,16 +67,23 @@ Deno.serve(async (req: Request) => {
       return null;
     }
   };
+  const uf = (prop.uf as string | null) ?? null;
+  const areaHa = prop.area_ha != null ? Number(prop.area_ha) : null;
   const hasPoint = typeof lon === "number" && typeof lat === "number";
-  const [viability, zarc, outorgas, compliance, logistics, amenities, spread] = await Promise.all([
-    hasPoint ? rpc("get_viability", { p_lon: lon, p_lat: lat, p_municipio: muni }) : null,
-    muni ? rpc("get_zarc", { p_municipio: muni }) : null,
-    hasPoint ? rpc("get_outorgas", { p_lon: lon, p_lat: lat, p_geojson: geom }) : null,
-    hasPoint ? rpc("get_compliance", { p_lon: lon, p_lat: lat, p_geojson: geom }) : null,
-    hasPoint ? rpc("get_logistics", { p_lon: lon, p_lat: lat, p_municipio: muni }) : null,
-    hasPoint ? rpc("get_amenities", { p_lon: lon, p_lat: lat }) : null,
-    muni ? rpc("get_spread", { p_municipio: muni }) : null,
-  ]);
+  const [viability, zarc, outorgas, compliance, logistics, amenities, spread, liquidity, matricula] =
+    await Promise.all([
+      hasPoint ? rpc("get_viability", { p_lon: lon, p_lat: lat, p_municipio: muni }) : null,
+      muni ? rpc("get_zarc", { p_municipio: muni }) : null,
+      hasPoint ? rpc("get_outorgas", { p_lon: lon, p_lat: lat, p_geojson: geom }) : null,
+      hasPoint ? rpc("get_compliance", { p_lon: lon, p_lat: lat, p_geojson: geom }) : null,
+      hasPoint ? rpc("get_logistics", { p_lon: lon, p_lat: lat, p_municipio: muni }) : null,
+      hasPoint ? rpc("get_amenities", { p_lon: lon, p_lat: lat }) : null,
+      muni ? rpc("get_spread", { p_municipio: muni }) : null,
+      // liquidez / tempo de exposição de mercado (Frente C): mediana de dias no mercado
+      (muni || uf) ? rpc("get_liquidity", { p_municipio: muni, p_uf: uf, p_area_ha: areaHa, p_rural: true }) : null,
+      // análise da matrícula (Frente E): ônus/gravames para a "documentação utilizada"
+      rpc("get_matricula_analysis", { p_request_id: requestId }),
+    ]);
   // código de verificação ALEATÓRIO (não derivável do request_id): entra no PDF
   // ANTES do hash, para o SHA-256 ser do documento final já com o código.
   const B32 = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
@@ -109,6 +116,8 @@ Deno.serve(async (req: Request) => {
   const bundleWithSignals = {
     ...bundle,
     signals: { viability, zarc, outorgas, compliance, logistics, amenities, spread },
+    liquidity,
+    matricula,
     verification: { code: verificationCode, url: `${verifyBase}?c=${verificationCode}` },
     photos,
   };
