@@ -1,10 +1,20 @@
 // Edge Function: analyze-matricula
-// Lê a matrícula (PDF) do bucket privado, extrai o texto e roda o detector de passivos
-// por regras. Persiste a análise (sem reexpor o arquivo). Chamado após o upload/registro.
+// Lê a matrícula (PDF) do bucket privado e produz a triagem dominial em duas camadas:
+//   1) detector de passivos por REGRAS (_shared/matricula.ts) — sempre roda, é a base;
+//   2) OCR + leitura contextual por LLM (_shared/gemini.ts) — quando há GEMINI_API_KEY.
+// Se o PDF não tem camada de texto (escaneado), o OCR na nuvem entra no lugar dela e o
+// mesmo texto alimenta as duas camadas. Sem a chave, o comportamento é o anterior:
+// regras no PDF pesquisável e 422 no escaneado. Persiste a análise (sem reexpor o arquivo).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { extractText, getDocumentProxy } from "https://esm.sh/unpdf@0.12.1";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { analisarMatricula } from "../_shared/matricula.ts";
+import { geminiEnabled, geminiModel, lerMatricula, ocrPdf, MAX_OCR_BYTES } from "../_shared/gemini.ts";
+
+/** Abaixo disso o PDF não tem camada de texto útil: é digitalização e precisa de OCR. */
+const MIN_TEXT_CHARS = 40;
+
+const semTexto = (s: string) => s.replace(/\s/g, "").length < MIN_TEXT_CHARS;
 
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin");
@@ -29,7 +39,7 @@ Deno.serve(async (req: Request) => {
   });
   const { data: doc, error: docErr } = await asUser
     .from("matricula_documents")
-    .select("id, request_id, storage_path, owner_id")
+    .select("id, request_id, storage_path, owner_id, consent, consent_version")
     .eq("id", body.document_id)
     .single();
   if (docErr || !doc) return jsonResponse({ error: "Documento não encontrado ou sem acesso" }, origin, 403);
@@ -40,35 +50,65 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Caminho de arquivo inválido para este documento" }, origin, 403);
   }
 
+  // O envio à nuvem só é lícito sob o consentimento que declara esse envio. Documentos
+  // registrados sob a redação antiga (consent_version null) ficam restritos às regras
+  // locais, mesmo com a chave configurada: consentir com "análise de ônus" não é
+  // consentir com "enviar a matrícula ao Google".
+  const podeNuvem = geminiEnabled() && doc.consent === true && doc.consent_version === "v2-cloud-ocr";
+
   // service role para baixar o arquivo (bypass RLS de storage) e persistir a análise
   const svc = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data: file, error: dlErr } = await svc.storage.from("matriculas").download(doc.storage_path);
   if (dlErr || !file) return jsonResponse({ error: "Falha ao ler o arquivo da matrícula" }, origin, 400);
 
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
   let text = "";
   try {
-    const buf = new Uint8Array(await file.arrayBuffer());
-    const pdf = await getDocumentProxy(buf);
+    const pdf = await getDocumentProxy(bytes);
     const res = await extractText(pdf, { mergePages: true });
     text = Array.isArray(res.text) ? res.text.join("\n") : String(res.text ?? "");
   } catch (e) {
+    // PDF só-imagem costuma extrair vazio em vez de lançar, mas um PDF corrompido cai
+    // aqui; o OCR abaixo ainda tem chance, então não aborta já.
     console.error("pdf text extraction failed:", String(e));
-    return jsonResponse(
-      { error: "Não foi possível extrair texto (matrícula pode ser imagem/escaneada; OCR não disponível)" },
-      origin,
-      422,
-    );
   }
-  if (text.replace(/\s/g, "").length < 40) {
+
+  // ── OCR: a digitalização passa a ser lida, não recusada ─────────────────────
+  let ocrUsado = false;
+  if (semTexto(text) && podeNuvem) {
+    if (bytes.length > MAX_OCR_BYTES) {
+      return jsonResponse(
+        { error: "PDF grande demais para leitura automática. Reenvie com resolução menor (300 dpi bastam)." },
+        origin,
+        422,
+      );
+    }
+    const ocr = await ocrPdf(bytes);
+    if (ocr && !semTexto(ocr)) {
+      text = ocr;
+      ocrUsado = true;
+    }
+  }
+
+  if (semTexto(text)) {
     return jsonResponse(
-      { error: "Texto insuficiente (matrícula provavelmente escaneada como imagem; requer OCR)" },
+      {
+        error: podeNuvem
+          ? "Não foi possível ler a matrícula. Verifique se o PDF está legível, reto e nítido, e tente de novo."
+          : "Texto insuficiente (matrícula provavelmente escaneada como imagem; leitura automática indisponível).",
+      },
       origin,
       422,
     );
   }
 
+  // Regras sempre rodam: são a triagem primária e o piso de qualidade se o LLM falhar.
   const analise = analisarMatricula(text);
+  const leitura = podeNuvem ? await lerMatricula(text) : null;
+
   const markdown = text.replace(/\r/g, "").replace(/[ \t]+/g, " ").slice(0, 20000);
+  const engine = leitura ? (ocrUsado ? "ocr+llm+rules-0.2" : "llm+rules-0.2") : "rule-based-0.1";
 
   const { data: ins, error: insErr } = await svc
     .from("matricula_analyses")
@@ -79,7 +119,10 @@ Deno.serve(async (req: Request) => {
       passivos: analise.passivos,
       n_passivos: analise.n_passivos,
       n_ativos: analise.n_ativos,
-      engine: "rule-based-0.1",
+      leitura,
+      ocr: ocrUsado,
+      llm_model: leitura ? geminiModel() : null,
+      engine,
     })
     .select("id")
     .single();
@@ -94,6 +137,9 @@ Deno.serve(async (req: Request) => {
       n_passivos: analise.n_passivos,
       n_ativos: analise.n_ativos,
       passivos: analise.passivos,
+      leitura,
+      ocr: ocrUsado,
+      engine,
     },
     origin,
   );

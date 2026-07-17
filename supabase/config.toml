@@ -32,6 +32,10 @@ double_confirm_changes = true
 enabled = true
 verify_jwt = true
 
+[functions.analyze-matricula]
+enabled = true
+verify_jwt = true
+
 [functions.generate-report]
 enabled = true
 verify_jwt = true

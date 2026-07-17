@@ -405,9 +405,14 @@ function renderDocumentos(
       const rec = m as Record<string, unknown>;
       const nP = Number(rec.n_passivos ?? 0);
       const nA = Number(rec.n_ativos ?? 0);
+      const metodo = rec.leitura
+        ? rec.ocr === true
+          ? "OCR + leitura assistida e regras"
+          : "leitura assistida e regras"
+        : "triagem automática por regras";
       const resumo = nP === 0
-        ? "Sem ônus/gravame aparente na triagem automática"
-        : `${nP} apontamento(s), ${nA} possivelmente ativo(s) (triagem automática por regras)`;
+        ? `Sem ônus/gravame aparente na triagem (${metodo})`
+        : `${nP} apontamento(s), ${nA} possivelmente ativo(s) (${metodo})`;
       // não ecoa o nome do arquivo enviado (pode conter PII); rótulo genérico + índice
       rows.push([`Matrícula do imóvel${mats.length > 1 ? ` (documento ${i + 1})` : ""}`, resumo]);
     });
@@ -415,9 +420,91 @@ function renderDocumentos(
     rows.push(["Matrícula do imóvel", "Não anexada / análise dominial a cargo do responsável técnico"]);
   }
   doc.table(["Documento", "Descrição / situação"], rows, [0.34, 0.66]);
+
+  // Leitura contextual da matrícula mais recente que tenha uma. Só fato técnico: a
+  // extração é instruída e saneada para não trazer nome, CPF nem endereço de pessoas,
+  // e os confrontantes entram como QUANTIDADE, nunca como identificação.
+  const comLeitura = mats.find((m) => (m as Record<string, unknown>).leitura) as
+    | Record<string, unknown>
+    | undefined;
+  if (comLeitura) renderLeituraMatricula(doc, comLeitura);
+
   if (mats.length) {
+    const temLlm = mats.some((m) => (m as Record<string, unknown>).leitura);
     doc.paragraph(
-      "A triagem de ônus da matrícula é automática (por regras) e não substitui a análise jurídica; a leitura dominial definitiva é do responsável técnico.",
+      temLlm
+        ? "A leitura da matrícula é automática (transcrição e interpretação assistidas por IA, conferidas por regras) e não substitui a análise jurídica; a leitura dominial definitiva é do responsável técnico, que confere o documento original."
+        : "A triagem de ônus da matrícula é automática (por regras) e não substitui a análise jurídica; a leitura dominial definitiva é do responsável técnico.",
+      { size: 8, color: MUTED }
+    );
+  }
+}
+
+/** Tabela "o que a matrícula diz", a partir da leitura estruturada (sem PII). */
+function renderLeituraMatricula(doc: Doc, analise: Record<string, unknown>): void {
+  const L = analise.leitura as Record<string, unknown>;
+  const rows: string[][] = [];
+  const add = (label: string, v: unknown) => {
+    const s = typeof v === "string" ? v.trim() : v === null || v === undefined ? "" : String(v);
+    if (s) rows.push([label, s]);
+  };
+  const simNao = (v: unknown) => (v === true ? "Sim" : v === false ? "Não" : "");
+
+  const numero = L.matricula_numero as string | null;
+  const cartorio = L.cartorio as string | null;
+  add("Matrícula", [numero ? `nº ${numero}` : "", cartorio].filter(Boolean).join(" - "));
+  add("Município / UF", L.municipio_uf);
+  add("Denominação do imóvel", L.denominacao);
+
+  const areaHa = typeof L.area_registrada_ha === "number" ? L.area_registrada_ha : null;
+  const areaTxt = (L.area_texto as string | null) ?? "";
+  add(
+    "Área registrada",
+    areaHa !== null
+      ? `${fmtNum(areaHa, 4)} ha${areaTxt ? ` (na matrícula: ${areaTxt})` : ""}`
+      : areaTxt
+  );
+  add("Georreferenciamento (INCRA)", simNao(L.georreferenciada));
+  add("Confrontantes citados", typeof L.confrontantes_n === "number" ? `${L.confrontantes_n}` : "");
+  add("Transmissões registradas", typeof L.transmissoes_n === "number" ? `${L.transmissoes_n}` : "");
+
+  const rlDet = (L.reserva_legal_detalhe as string | null) ?? "";
+  const rlAv = simNao(L.reserva_legal_averbada);
+  add("Reserva legal averbada", [rlAv, rlDet].filter(Boolean).join(rlAv && rlDet ? " - " : ""));
+
+  const onus = Array.isArray(L.onus) ? (L.onus as Array<Record<string, unknown>>) : [];
+  const ativos = onus.filter((o) => o.status === "ativo");
+  const indet = onus.filter((o) => o.status === "indeterminado");
+  const descOnus = (o: Record<string, unknown>) =>
+    `${String(o.tipo ?? "")}${o.ato ? ` (${String(o.ato)})` : ""}`;
+  add("Ônus/gravames ativos", ativos.length ? ativos.map(descOnus).join("; ") : onus.length ? "Nenhum" : "");
+  if (indet.length) add("Situação indeterminada", indet.map(descOnus).join("; "));
+  add("Observações", L.observacoes);
+
+  if (!rows.length) return;
+  doc.paragraph("Leitura da matrícula (extração automática):", { size: 8.8 });
+  doc.table(["Elemento", "Constatação"], rows, [0.34, 0.66]);
+
+  // Regras e LLM são camadas independentes: segunda opinião só serve se a DIVERGÊNCIA
+  // aparecer. Sem isto o laudo imprimiria dois números contraditórios sobre o mesmo
+  // documento, lado a lado, sem dizer que discordam.
+  const nAtivosRegras = Number(analise.n_ativos ?? 0);
+  if ((nAtivosRegras > 0) !== (ativos.length > 0)) {
+    doc.paragraph(
+      `Atenção: as duas camadas de triagem divergem sobre este documento (regras: ${nAtivosRegras} ônus ativo(s); ` +
+        `leitura assistida: ${ativos.length}). Conferência do responsável técnico na matrícula original é indispensável.`,
+      { size: 8, color: MUTED }
+    );
+  }
+
+  // A confiança precisa aparecer: uma digitalização ruim produz leitura fraca, e quem
+  // assina o laudo tem que saber quando desconfiar dela.
+  const conf = String(L.confianca ?? "");
+  if (conf && conf !== "alta") {
+    doc.paragraph(
+      conf === "baixa"
+        ? "Atenção: confiança BAIXA na leitura automática (documento pouco legível). Confira a matrícula original antes de usar estes dados."
+        : "Confiança média na leitura automática; recomenda-se conferência na matrícula original.",
       { size: 8, color: MUTED }
     );
   }
