@@ -7,7 +7,10 @@ leilão/retomada). É estruturada, atualizada diariamente e legal de usar. Serve
 alimentar a base própria de comparáveis (market_listings) com preço, área, município,
 tipo e modalidade — e, ao reexecutar ao longo do tempo, o tempo de anúncio (iliquidez).
 
-Somente stdlib. Preserva acentos pt-BR (fonte em latin-1 -> str Unicode).
+Stdlib + curl_cffi (opcional, ver scrapers/requirements.txt): desde 2026-08-08 a
+CAIXA responde ao Python puro com HTTP 200 + pagina de CAPTCHA do Radware, entao
+o download usa fingerprint TLS de Chrome quando a lib esta disponivel.
+Preserva acentos pt-BR (fonte em latin-1 -> str Unicode).
 
 Uso:
   # valida o parse sem tocar o banco (imprime amostra + estatísticas)
@@ -91,14 +94,49 @@ def parse_desc(desc: str):
     return tipo, area_total, area_terreno
 
 
+def _looks_like_block(raw: bytes) -> str | None:
+    """A CAIXA esta atras do Radware Bot Manager, que NAO devolve 403: devolve
+    HTTP 200 com uma pagina de CAPTCHA. Medido em 2026-08-08 a partir do GitHub
+    Actions: urllib -> 200 com 18.419 bytes de HTML; curl_cffi -> 200 com os
+    247.172 bytes do CSV, no MESMO IP. Sem esta checagem o 200 falso passaria
+    pelo retry (que so olha excecao) e so estouraria la no parser, com a
+    mensagem errada ('cabecalho nao encontrado')."""
+    head = raw[:2048].lower()
+    for marca in (b"<html", b"<head", b"captcha", b"bot manager", b"perfdrive"):
+        if marca in head:
+            return f"resposta nao e CSV ({len(raw)} bytes, parece pagina de bloqueio/CAPTCHA)"
+    if len(raw) < 5000:
+        return f"resposta suspeita de truncamento ({len(raw)} bytes)"
+    return None
+
+
+def _http_get(url: str) -> bytes:
+    """curl_cffi quando disponivel, urllib como reserva.
+
+    O filtro da CAIXA é de fingerprint TLS, não de ASN nem de User-Agent: o mesmo
+    IP de datacenter passa com o handshake de um Chrome real e é barrado com o do
+    Python. Por isso curl_cffi é o caminho primario. Continua sendo 1 requisicao
+    por dia de um CSV publico, sem login."""
+    try:
+        from curl_cffi import requests as creq  # opcional; ver requirements.txt
+    except ImportError:
+        req = urllib.request.Request(url, headers={"User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            return resp.read()
+    r = creq.get(url, impersonate="chrome131", timeout=90)
+    r.raise_for_status()
+    return r.content
+
+
 def fetch_csv(uf: str, attempts: int = 3) -> str:
     url = CSV_URL.format(uf=uf.upper())
     last: Exception | None = None
     for i in range(1, attempts + 1):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": UA})
-            with urllib.request.urlopen(req, timeout=90) as resp:
-                raw = resp.read()
+            raw = _http_get(url)
+            problema = _looks_like_block(raw)
+            if problema:
+                raise RuntimeError(problema)
             return raw.decode("latin-1")  # fonte é latin-1; vira str Unicode (acentos ok)
         except Exception as e:
             # erro transitório (rede/timeout/5xx) não pode custar o snapshot do dia:

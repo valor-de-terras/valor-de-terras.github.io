@@ -1,0 +1,10 @@
+# Dependencia OPCIONAL do caixa_imoveis.py.
+#
+# O scraper roda sem ela (cai para urllib da stdlib), mas a CAIXA esta atras do
+# Radware Bot Manager, que filtra por fingerprint TLS e devolve HTTP 200 com uma
+# pagina de CAPTCHA em vez de 403. O handshake do Python puro e' barrado; o de um
+# Chrome real passa, inclusive a partir de IP de datacenter.
+#
+# Instalar tornou-se necessario na pratica, e e' o que viabiliza rodar em CI.
+#   py -3 -m pip install -r scrapers/requirements.txt
+curl_cffi>=0.7
